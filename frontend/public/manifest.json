@@ -1,0 +1,10 @@
+{
+  "name": "JARI - Poultry Farm Intelligence",
+  "short_name": "JARI",
+  "description": "Poultry Farm Risk Intelligence & Financial Enablement Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#059669"
+}
+
