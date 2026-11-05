@@ -9,6 +9,9 @@ from app.models.production_record import ProductionRecord
 from app.models.health_incident import HealthIncident
 from app.models.vaccination_record import VaccinationRecord
 from app.models.treatment_record import TreatmentRecord
+from app.models.sale import Sale
+from app.models.expense import Expense
+from app.models.payment import FinancialPayment
 
 __all__ = [
     "User",
@@ -22,4 +25,7 @@ __all__ = [
     "HealthIncident",
     "VaccinationRecord",
     "TreatmentRecord",
+    "Sale",
+    "Expense",
+    "FinancialPayment",
 ]

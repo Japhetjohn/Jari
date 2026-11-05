@@ -43,6 +43,16 @@ from app.schemas.operations import (
     TreatmentRecordResponse,
     HealthOverviewSummary,
 )
+from app.schemas.financial import (
+    SaleCreate,
+    SaleResponse,
+    ExpenseCreate,
+    ExpenseResponse,
+    PaymentCreateRequest,
+    PaymentEntryResponse,
+    FinancialOverviewResponse,
+    FinancialTransactionItem,
+)
 
 __all__ = [
     "FarmerRegisterRequest",
@@ -80,4 +90,12 @@ __all__ = [
     "TreatmentRecordCreate",
     "TreatmentRecordResponse",
     "HealthOverviewSummary",
+    "SaleCreate",
+    "SaleResponse",
+    "ExpenseCreate",
+    "ExpenseResponse",
+    "PaymentCreateRequest",
+    "PaymentEntryResponse",
+    "FinancialOverviewResponse",
+    "FinancialTransactionItem",
 ]
