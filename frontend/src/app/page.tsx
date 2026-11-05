@@ -46,7 +46,6 @@ export default function HomePage() {
             <div className="hero-photo hero-photo-main absolute inset-x-[12%] top-0 h-[270px] overflow-hidden rounded-[1.65rem] sm:inset-x-[18%] sm:h-[350px] sm:rounded-[2rem] lg:inset-x-[21%] lg:h-[390px]">
               <Image src="/images/nigerian-poultry-house.jpg" alt="Chickens and feeders inside a poultry house in Kano, Nigeria" fill priority sizes="(max-width: 640px) 76vw, (max-width: 1024px) 64vw, 58vw" className="hero-farm-photo object-cover object-[center_65%]" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#14241a]/45 via-transparent to-transparent" />
-              <span className="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-semibold tracking-wide text-[#344536] sm:bottom-5 sm:left-5 sm:text-xs">A clearer picture starts on the farm</span>
             </div>
             <div className="hero-float-card absolute left-0 top-[35px] z-10 w-[44%] max-w-[210px] rounded-[1.15rem] bg-white p-3 shadow-[0_18px_48px_-28px_rgba(23,44,27,.42)] sm:left-[4%] sm:top-[50px] sm:w-[200px] sm:p-4">
               <div className="flex items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eaf0e4] text-[#52744e]"><HeartPulse size={14} /></span><span className="text-[9px] font-bold uppercase tracking-[.11em] text-[#63735e] sm:text-[10px]">Farm records</span></div>
