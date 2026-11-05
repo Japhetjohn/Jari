@@ -1,10 +1,13 @@
-import { farmNotifications } from "@/lib/notifications";
+import { getFarmNotifications } from "@/lib/notifications";
 import {
     addExpenseRecord,
+    addFarmAsset,
     addFeedPurchase,
     addFeedUse,
     addFlockMovement,
+    addFlockTransfer,
     addHealthIncident,
+    addTreatmentRecord,
     addProductionRecord,
     addSaleRecord,
     recordSalePayment,
@@ -27,7 +30,11 @@ import {
     getFlockMovements,
     getProductionRecords,
     getOpportunityApplications,
+    getInstitutionRequests,
+    getInstitutionRegistration,
+    getInstitutionRegistrations,
     getUserPreferences,
+    getInstitutionDemoAccess,
     getFarmDocuments,
     getPoultryHouses,
     getSalesRecords,
@@ -43,7 +50,11 @@ import {
     saveSalesRecords,
     updatePoultryHouse,
     updateOpportunityApplication,
+    addInstitutionRequest,
+    updateInstitutionRequest,
     saveUserPreferences,
+    saveInstitutionDemoAccess,
+    saveInstitutionRegistration,
     removeFarmDocument,
 } from "@/lib/simulated-data";
 import type { ExpenseEntry, FarmAssetRecord, FeedPurchaseRecord, FeedUseRecord, FlockRecord, ProductionRecord, SavedFarmProfile } from "@/lib/simulated-data";
@@ -51,6 +62,12 @@ import type { AssetRecord, DashboardSummary, ExpenseRecord, FarmProfile, FeedCon
 
 const delay = (ms = 80) => new Promise((resolve) => setTimeout(resolve, ms));
 const currency = (amount: number | string) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(String(amount).replace(/[^\d.-]/g, "")) || 0);
+const monthKey = (value: string) => {
+    const direct = value.match(/^(\d{4})-(\d{2})/);
+    if (direct) return `${direct[1]}-${direct[2]}`;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? "" : `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}`;
+};
 
 const farmForApi = (farm: SavedFarmProfile): FarmProfile => ({
     id: "farm-primary",
@@ -86,7 +103,10 @@ export const mockApi = {
     async getDashboardSummary(): Promise<DashboardSummary> {
         await delay();
         const totals = getDashboardTotals();
-        return { activeFlocks: String(totals.activeFlocks), revenueThisMonth: currency(totals.salesTotal), feedCost: currency(totals.feedTotal), riskScore: "Review needed" };
+        const currentMonth = monthKey(new Date().toISOString());
+        const revenueThisMonth = getSalesRecords().filter((sale) => monthKey(sale.date) === currentMonth).reduce((sum, sale) => sum + (Number(String(sale.amount).replace(/[^\d.-]/g, "")) || 0), 0);
+        const feedCost = getFeedPurchases().filter((purchase) => monthKey(purchase.date) === currentMonth).reduce((sum, purchase) => sum + purchase.amount, 0);
+        return { activeFlocks: String(totals.activeFlocks), revenueThisMonth: currency(revenueThisMonth), feedCost: currency(feedCost), riskScore: "Not assessed" };
     },
     async getFarmProfile(): Promise<FarmProfile> { await delay(); return farmForApi(getSavedFarmProfile() || defaultFarmProfile); },
     async getFlocks(): Promise<ApiFlock[]> { await delay(); return getFlockRecords().map(flockForApi); },
@@ -96,11 +116,11 @@ export const mockApi = {
     async getExpenses(): Promise<ExpenseRecord[]> { await delay(); return getExpensesRecords().map((record) => ({ id: record.id || record.date, date: record.date, category: record.category, amount: currency(record.amount) })); },
     async getAssets(): Promise<AssetRecord[]> { await delay(); return getFarmAssets().map((asset) => ({ id: asset.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), name: asset.name, quantity: asset.quantity, status: asset.status === "Working" ? "Functional" : asset.status, value: currency(asset.value) })); },
     async getOpportunities(): Promise<OpportunityItem[]> { await delay(); return [
-        { id: "opportunity-001", name: "Poultry Expansion Grant", type: "Grant", match: "High match" },
-        { id: "opportunity-002", name: "Working Capital Facility", type: "Loan", match: "Medium match" },
-        { id: "opportunity-003", name: "Broiler Health Insurance", type: "Insurance", match: "Medium match" },
+        { id: "opportunity-001", name: "Poultry Expansion Grant", type: "Grant", match: "Eligibility not assessed" },
+        { id: "opportunity-002", name: "Working Capital Facility", type: "Loan", match: "Eligibility not assessed" },
+        { id: "opportunity-003", name: "Poultry Health Cover", type: "Insurance", match: "Eligibility not assessed" },
     ]; },
-    async getNotifications(): Promise<NotificationItem[]> { await delay(); return farmNotifications.map(({ id, title, detail, time }) => ({ id, title, detail, time })); },
+    async getNotifications(): Promise<NotificationItem[]> { await delay(); return getFarmNotifications().map(({ id, title, detail, time }) => ({ id, title, detail, time })); },
     async updateFarm(profile: SavedFarmProfile) { await delay(); saveFarmProfile(profile); return profile; },
     async createFlock(flocks: FlockRecord[]) { await delay(); saveFlockRecords(flocks); return flocks; },
     async createHouse(houses: ReturnType<typeof getPoultryHouses>) { await delay(); savePoultryHouses(houses); return houses; },
@@ -117,8 +137,8 @@ export const mockApi = {
     async recordProduction(record: Parameters<typeof addProductionRecord>[0]) { await delay(); return addProductionRecord(record); },
     async recordSale(record: Parameters<typeof addSaleRecord>[0]) { await delay(); return addSaleRecord(record); },
     async recordExpense(record: Parameters<typeof addExpenseRecord>[0]) { await delay(); return addExpenseRecord(record); },
-    async collectSalePayment(id: string, amount: number) { await delay(); return recordSalePayment(id, amount); },
-    async payExpenseBalance(id: string, amount: number) { await delay(); return recordExpensePayment(id, amount); },
+    async collectSalePayment(id: string, amount: number, date?: string, note?: string) { await delay(); return recordSalePayment(id, amount, date, note); },
+    async payExpenseBalance(id: string, amount: number, date?: string, note?: string) { await delay(); return recordExpensePayment(id, amount, date, note); },
     async recordVaccination(record: Parameters<typeof addVaccinationRecord>[0]) { await delay(); return addVaccinationRecord(record); },
     async recordHealthIncident(record: Parameters<typeof addHealthIncident>[0]) { await delay(); return addHealthIncident(record); },
 };
@@ -128,10 +148,13 @@ export type MockApi = typeof mockApi;
 export {
     applyToOpportunity,
     addExpenseRecord,
+    addFarmAsset,
     addFeedPurchase,
     addFeedUse,
     addFlockMovement,
+    addFlockTransfer,
     addHealthIncident,
+    addTreatmentRecord,
     addProductionRecord,
     addSaleRecord,
     recordSalePayment,
@@ -154,10 +177,15 @@ export {
     getFlockRecords,
     getFlockMovements,
     getHealthIncidents,
+    getTreatmentRecords,
     getKycApplication,
     getProductionRecords,
     getOpportunityApplications,
+    getInstitutionRequests,
+    getInstitutionRegistration,
+    getInstitutionRegistrations,
     getUserPreferences,
+    getInstitutionDemoAccess,
     getFarmDocuments,
     getPoultryHouses,
     getSalesRecords,
@@ -172,15 +200,22 @@ export {
     saveFlockRecords,
     saveFlockMovements,
     saveHealthIncidents,
+    saveTreatmentRecords,
+    updateHealthIncident,
+    deleteHealthIncident,
     saveKycApplication,
     saveProductionRecords,
     savePoultryHouses,
     saveSalesRecords,
     updatePoultryHouse,
     updateOpportunityApplication,
+    addInstitutionRequest,
+    updateInstitutionRequest,
     saveUserPreferences,
+    saveInstitutionDemoAccess,
+    saveInstitutionRegistration,
     removeFarmDocument,
     saveVaccinationRecords,
 } from "@/lib/simulated-data";
 
-export type { ActivityRecord, ExpenseEntry, FarmAssetRecord, FarmHouseRecord, FarmFlockMovement, FarmDocumentRecord, FeedPurchaseRecord, FeedUseRecord, FlockRecord, KycApplication, OpportunityApplicationRecord, ProductionRecord, SalesEntry, SavedFarmProfile, UserPreferences, VaccinationRecord, HealthIncidentRecord } from "@/lib/simulated-data";
+export type { ActivityRecord, ExpenseEntry, FarmAssetRecord, FarmHouseRecord, FarmFlockMovement, FarmDocumentRecord, FinancialPaymentRecord, FeedPurchaseRecord, FeedUseRecord, FlockRecord, KycApplication, OpportunityApplicationRecord, ProductionRecord, SalesEntry, SavedFarmProfile, UserPreferences, VaccinationRecord, HealthIncidentRecord, TreatmentRecord, InstitutionDemoAccess, InstitutionRequestRecord, InstitutionCategory, InstitutionRegistrationRecord, InstitutionVerificationDocument } from "@/lib/simulated-data";

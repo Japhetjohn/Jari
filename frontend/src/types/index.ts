@@ -83,7 +83,7 @@ export interface OpportunityItem {
     id: string;
     name: string;
     type: "Grant" | "Loan" | "Insurance";
-    match: "High match" | "Medium match" | "Low match";
+    match: "Eligibility not assessed";
 }
 
 export interface NotificationItem {

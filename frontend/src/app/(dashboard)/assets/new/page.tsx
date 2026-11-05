@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getFarmAssets, saveFarmAssets } from "@/services";
+import { addFarmAsset } from "@/services";
 
 const initialForm = {
     assetName: "",
@@ -16,6 +16,15 @@ export default function NewAssetPage() {
     const [form, setForm] = useState(initialForm);
     const router = useRouter();
     const [error, setError] = useState("");
+    const submit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault(); setError("");
+        const quantity = Number(form.quantity); const value = Number(form.estimatedValue || 0);
+        if (!form.assetName.trim() || !Number.isInteger(quantity) || quantity < 1 || !Number.isFinite(value) || value < 0) { setError("Enter an equipment name, whole number of items and a valid value."); return; }
+        try {
+            addFarmAsset({ name: form.assetName.trim(), quantity, status: form.operationalCondition === "Functional" ? "Working" : "Needs repair", value, notes: `${form.ownershipStatus} equipment${form.operationalCondition === "Non-functional" ? "; non-functional" : ""}.` });
+            router.push("/assets");
+        } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not save this equipment."); }
+    };
 
     const handleChange = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) => {
         setForm((previous) => ({ ...previous, [field]: value }));
@@ -28,13 +37,14 @@ export default function NewAssetPage() {
                 <h2 className="mt-2 text-3xl font-bold text-slate-900">Add farm asset</h2>
             </div>
 
-            <form onSubmit={(event) => { event.preventDefault(); if (!form.assetName.trim() || Number(form.quantity) < 1) { setError("Enter an equipment name and quantity greater than zero."); return; } saveFarmAssets([...getFarmAssets(), { name: form.assetName.trim(), quantity: Number(form.quantity), status: form.operationalCondition === "Functional" ? "Working" : "Needs repair", value: Number(form.estimatedValue) || 0, notes: `${form.ownershipStatus} equipment${form.operationalCondition === "Non-functional" ? "; non-functional" : ""}.` }]); router.push("/assets"); }} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <form onSubmit={submit} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
                 <div className="grid gap-5 md:grid-cols-2">
                     <div>
                         <label className="label-text">Asset name/type</label>
                         <input
                             className="input-shell"
+                            required
                             value={form.assetName}
                             onChange={(event) => handleChange("assetName", event.target.value)}
                             placeholder="Feed mixer"
@@ -46,6 +56,8 @@ export default function NewAssetPage() {
                         <input
                             type="number"
                             min={0}
+                            required
+                            step={1}
                             className="input-shell"
                             value={form.quantity}
                             onChange={(event) => handleChange("quantity", event.target.value)}
@@ -83,6 +95,7 @@ export default function NewAssetPage() {
                         <input
                             type="number"
                             min={0}
+                            step="0.01"
                             className="input-shell"
                             value={form.estimatedValue}
                             onChange={(event) => handleChange("estimatedValue", event.target.value)}

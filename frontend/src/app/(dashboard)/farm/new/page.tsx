@@ -24,6 +24,7 @@ export default function NewFarmPage() {
     const router = useRouter();
     const [form, setForm] = useState(initialForm);
     const [isSaved, setIsSaved] = useState(false);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         const existing = getFarmProfile();
@@ -44,11 +45,12 @@ export default function NewFarmPage() {
 
     const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        saveFarmProfile({ ...form, biosecurity: form.biosecurity });
-        setIsSaved(true);
-        window.setTimeout(() => {
-            router.push("/farm");
-        }, 500);
+        setError("");
+        try {
+            saveFarmProfile({ ...form, biosecurity: form.biosecurity });
+            setIsSaved(true);
+            window.setTimeout(() => router.push("/farm"), 500);
+        } catch (issue) { setIsSaved(false); setError(issue instanceof Error && /quota/i.test(issue.name + issue.message) ? "Browser storage is full. Download a backup or remove unused files before trying again." : "Farm details could not be saved. Please try again."); }
     };
 
     return (
@@ -59,11 +61,14 @@ export default function NewFarmPage() {
             </div>
 
             <form className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" onSubmit={onSubmit}>
+                {error && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+                {isSaved && <p role="status" className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">Farm details saved.</p>}
                 <div className="grid gap-5 md:grid-cols-2">
                     <div>
                         <label className="label-text">Farm name</label>
                         <input
                             className="input-shell"
+                            required
                             value={form.farmName}
                             onChange={(event) => handleChange("farmName", event.target.value)}
                             placeholder="Golden Feathers Poultry"
@@ -74,6 +79,7 @@ export default function NewFarmPage() {
                         <label className="label-text">Farm owner</label>
                         <input
                             className="input-shell"
+                            required
                             value={form.ownerName}
                             onChange={(event) => handleChange("ownerName", event.target.value)}
                             placeholder="Amina Daniel"
@@ -85,6 +91,7 @@ export default function NewFarmPage() {
                         <input
                             type="tel"
                             className="input-shell"
+                            required
                             value={form.phone}
                             onChange={(event) => handleChange("phone", event.target.value)}
                             placeholder="0803 000 0000"

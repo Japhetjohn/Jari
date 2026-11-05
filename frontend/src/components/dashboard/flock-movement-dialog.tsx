@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { addFlockMovement } from "@/services";
 import type { FlockRecord, FarmFlockMovement } from "@/services";
 
-const movementTypes: FarmFlockMovement["type"][] = ["Bird acquisition", "Additional stocking", "Mortality", "Sale", "Transfer in", "Transfer out", "Adjustment"];
+const movementTypes: FarmFlockMovement["type"][] = ["Bird acquisition", "Additional stocking", "Mortality", "Sale", "Adjustment"];
 
 export function FlockMovementDialog({ flocks, onClose, onSaved }: { flocks: FlockRecord[]; onClose: () => void; onSaved: () => void }) {
   const [flock, setFlock] = useState(flocks[0]?.name ?? "");

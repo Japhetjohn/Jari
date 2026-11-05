@@ -6,6 +6,11 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { loginWithSimulation } from "@/lib/auth";
 
+const demoAccounts = [
+  { label: "Farmer", phone: "08030000000", password: "password123" },
+  { label: "Institution", phone: "08060000000", password: "institution123" },
+];
+
 export default function LoginPage() {
   const router = useRouter();
   const [form, setForm] = useState({ phone: "", password: "" });
@@ -46,8 +51,9 @@ export default function LoginPage() {
         <p className="mt-2 text-sm leading-6 text-[#697268]">Continue with your phone number and password.</p>
       </div>
 
-      <div className="mb-5 rounded-xl bg-[#eef3eb] px-3.5 py-3 text-xs leading-5 text-[#456346]">
-        Demo login: <span className="font-semibold">08030000000</span> / <span className="font-semibold">password123</span>
+      <div className="mb-5 rounded-xl bg-[#eef3eb] p-3.5 text-xs leading-5 text-[#456346]">
+        <p className="font-semibold">Choose a demo workspace</p><p className="mt-1">These example accounts run only in this browser.</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">{demoAccounts.map((account) => <button key={account.label} type="button" onClick={() => { setForm({ phone: account.phone, password: account.password }); setError(""); }} className="min-h-10 rounded-lg bg-white px-2 text-left text-[11px] font-semibold text-[#36523b] transition-colors hover:bg-[#f8faf6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#76916a]">{account.label}</button>)}</div>
       </div>
 
       <form className="space-y-4" onSubmit={onSubmit}>
@@ -67,7 +73,7 @@ export default function LoginPage() {
         </div>
 
         <div className="flex items-center justify-between gap-3 pt-1 text-xs">
-          <label className="inline-flex items-center gap-2 text-[#5d685d]"><input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500" /> Remember me</label>
+          <span className="text-[#788174]">Sign-in stays on this browser until you sign out.</span>
           <Link href="/forgot-password" className="font-semibold text-[#496b50] transition-colors hover:text-[#244a35]">Forgot password?</Link>
         </div>
 

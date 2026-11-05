@@ -1,3 +1,5 @@
+import { saveInstitutionRegistration, type InstitutionRegistrationRecord } from "@/lib/simulated-data";
+
 export type MockRole = "farmer" | "admin" | "verification_agent" | "institutional_user";
 
 export type MockUser = {
@@ -161,8 +163,6 @@ export function registerWithSimulation(fullName: string, phone: string, password
     };
 
     const updatedUsers = [...users, newUser];
-    saveUsers(updatedUsers);
-
     const session: ActiveSession = {
         id: newUser.id,
         fullName: trimmedName,
@@ -171,7 +171,53 @@ export function registerWithSimulation(fullName: string, phone: string, password
     };
 
     if (typeof window !== "undefined") {
-        window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        const previousUsers = window.localStorage.getItem(USERS_KEY);
+        const previousSession = window.localStorage.getItem(SESSION_KEY);
+        try {
+            window.localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+            window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        } catch (error) {
+            try { if (previousUsers === null) window.localStorage.removeItem(USERS_KEY); else window.localStorage.setItem(USERS_KEY, previousUsers); } catch { /* Continue attempting to restore the session value. */ }
+            try { if (previousSession === null) window.localStorage.removeItem(SESSION_KEY); else window.localStorage.setItem(SESSION_KEY, previousSession); } catch { /* Preserve the original storage error. */ }
+            throw error;
+        }
+    }
+
+    return session;
+}
+
+export function registerInstitutionWithSimulation(
+    phone: string,
+    password: string,
+    application: Omit<InstitutionRegistrationRecord, "id" | "userId" | "submittedAt" | "status">,
+): ActiveSession {
+    const normalizedPhone = normalizePhone(phone);
+    if (!normalizedPhone || normalizedPhone.length < 10) throw new Error("Please enter a valid representative phone number.");
+    if (password.length < 6) throw new Error("Password must be at least 6 characters long.");
+    const users = readUsers();
+    if (users.some((user) => normalizePhone(user.phone) === normalizedPhone)) throw new Error("An account with this phone number already exists.");
+
+    const newUser: MockUser = {
+        id: `user-${Date.now()}`,
+        fullName: application.organisationName.trim(),
+        phone: normalizedPhone,
+        password,
+        role: "institutional_user",
+    };
+    const session: ActiveSession = { id: newUser.id, fullName: newUser.fullName, phone: normalizedPhone, role: "institutional_user" };
+
+    if (typeof window !== "undefined") {
+        const previousUsers = window.localStorage.getItem(USERS_KEY);
+        const previousSession = window.localStorage.getItem(SESSION_KEY);
+        try {
+            window.localStorage.setItem(USERS_KEY, JSON.stringify([...users, newUser]));
+            window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+            saveInstitutionRegistration({ ...application, userId: newUser.id });
+        } catch (error) {
+            try { if (previousUsers === null) window.localStorage.removeItem(USERS_KEY); else window.localStorage.setItem(USERS_KEY, previousUsers); } catch { /* Continue attempting to restore the session value. */ }
+            try { if (previousSession === null) window.localStorage.removeItem(SESSION_KEY); else window.localStorage.setItem(SESSION_KEY, previousSession); } catch { /* Preserve the original storage error. */ }
+            throw error;
+        }
     }
 
     return session;
