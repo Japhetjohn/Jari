@@ -1,9 +1,23 @@
 import type { Metadata } from "next";
+import { Newsreader, Source_Sans_3 } from "next/font/google";
+import { BackToTop } from "@/components/layout/back-to-top";
 import "./globals.css";
 
+const sourceSans = Source_Sans_3({
+  subsets: ["latin"],
+  variable: "--font-jari-sans",
+  display: "swap",
+});
+
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-jari-serif",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "JARI - Poultry Farm Risk Intelligence & Financial Enablement",
-  description: "Poultry Farm Intelligence and Financial Enablement Platform",
+  title: "JARI | Farm intelligence for poultry farmers",
+  description: "Organize poultry farm records, understand operations and prepare for financial opportunities with JARI.",
 };
 
 export default function RootLayout({
@@ -13,7 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={`${sourceSans.variable} ${newsreader.variable}`}>
+        {children}
+        <BackToTop />
+      </body>
     </html>
   );
 }
