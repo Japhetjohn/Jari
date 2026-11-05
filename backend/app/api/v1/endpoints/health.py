@@ -46,7 +46,9 @@ def list_health_incidents(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return []
     incidents = HealthService.get_incidents(db, farm.id, flock_id=flock_id)
     responses = []
     for inc in incidents:
@@ -143,7 +145,9 @@ def list_vaccinations(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return []
     records = HealthService.get_vaccinations(db, farm.id, flock_id=flock_id)
     responses = []
     for r in records:
@@ -191,7 +195,9 @@ def list_treatments(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return []
     records = HealthService.get_treatments(db, farm.id, flock_id=flock_id)
     responses = []
     for r in records:
@@ -238,6 +244,14 @@ def get_health_overview(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return HealthOverviewSummary(
+            total_incidents=0,
+            total_birds_affected=0,
+            total_birds_lost=0,
+            total_vaccinations=0,
+            total_treatments=0
+        )
     return HealthService.get_health_overview(db, farm.id)
 

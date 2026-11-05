@@ -39,7 +39,9 @@ def list_production_records(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return []
     records = ProductionService.get_records(db, farm.id, flock_id=flock_id)
     responses = []
     for r in records:
@@ -84,6 +86,15 @@ def get_production_summary(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return ProductionSummary(
+            total_records=0,
+            total_eggs_collected=0,
+            total_good_eggs=0,
+            total_damaged_eggs=0,
+            total_birds_ready=0,
+            overall_average_weight=0.0
+        )
     return ProductionService.get_summary(db, farm.id)
 

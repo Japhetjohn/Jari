@@ -41,7 +41,9 @@ def list_sales(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return []
     sales = SalesService.get_sales(db, farm.id, flock_id=flock_id, product=product)
 
     responses = []

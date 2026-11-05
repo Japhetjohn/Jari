@@ -41,7 +41,9 @@ def list_feed_purchases(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return []
     purchases = FeedService.get_purchases(db, farm.id, feed_type=feed_type)
     responses = []
     for p in purchases:
@@ -87,7 +89,9 @@ def list_feed_consumption(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return []
     consumptions = FeedService.get_consumptions(db, farm.id, flock_id=flock_id)
     responses = []
     for c in consumptions:
@@ -132,6 +136,14 @@ def get_feed_inventory(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return FeedInventorySummary(
+            total_bought_kg=0.0,
+            total_used_kg=0.0,
+            total_available_kg=0.0,
+            total_spent=0.0,
+            items=[]
+        )
     return FeedService.get_inventory_summary(db, farm.id)
 

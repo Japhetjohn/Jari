@@ -20,6 +20,7 @@ import {
 } from "@/lib/api-client";
 import {
   STORAGE_KEYS,
+  defaultFarmProfile,
   type SavedFarmProfile,
   type FarmHouseRecord,
   type FlockRecord,
@@ -278,13 +279,43 @@ export async function syncAllFromBackend(): Promise<void> {
   isSyncing = true;
   try {
     // 1. Fetch Farm
+    let farmFound = false;
     try {
       const farmRes = await farmApi.getMyFarm();
       if (farmRes) {
+        farmFound = true;
         writeStorageDirect(STORAGE_KEYS.farmProfile, backendToFarmProfile(farmRes));
       }
     } catch (e: any) {
       // 404 is normal if farm not registered yet
+    }
+
+    if (!farmFound) {
+      writeStorageDirect(STORAGE_KEYS.farmProfile, defaultFarmProfile);
+      writeStorageDirect(STORAGE_KEYS.poultryHouses, []);
+      writeStorageDirect(STORAGE_KEYS.flockRecords, []);
+      writeStorageDirect(STORAGE_KEYS.feedPurchases, []);
+      writeStorageDirect(STORAGE_KEYS.feedUse, []);
+      writeStorageDirect(STORAGE_KEYS.production, []);
+      writeStorageDirect(STORAGE_KEYS.healthIncidents, []);
+      writeStorageDirect(STORAGE_KEYS.vaccinations, []);
+      writeStorageDirect(STORAGE_KEYS.treatments, []);
+      writeStorageDirect(STORAGE_KEYS.salesRecords, []);
+      writeStorageDirect(STORAGE_KEYS.expensesRecords, []);
+      writeStorageDirect(STORAGE_KEYS.documents, []);
+
+      try {
+        const kycRes = await kycApi.getMyKyc();
+        if (kycRes) {
+          writeStorageDirect(STORAGE_KEYS.kycApplication, backendToKyc(kycRes));
+        } else {
+          writeStorageDirect(STORAGE_KEYS.kycApplication, null);
+        }
+      } catch {
+        writeStorageDirect(STORAGE_KEYS.kycApplication, null);
+      }
+      emitDataChanged("*");
+      return;
     }
 
     // 2. Fetch Houses

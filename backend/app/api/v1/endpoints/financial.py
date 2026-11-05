@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -38,7 +39,19 @@ def get_financial_overview(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return FinancialOverviewResponse(
+            total_sales=Decimal("0.0"),
+            cash_received=Decimal("0.0"),
+            outstanding_receivables=Decimal("0.0"),
+            total_expenses=Decimal("0.0"),
+            feed_costs=Decimal("0.0"),
+            cash_paid_out=Decimal("0.0"),
+            outstanding_payables=Decimal("0.0"),
+            net_cash_flow=Decimal("0.0"),
+            operating_result=Decimal("0.0"),
+        )
     return FinancialLedgerService.get_overview(
         db,
         farm.id,
@@ -58,6 +71,8 @@ def get_financial_transactions(
     current_user: User = Depends(require_role(UserRole.FARMER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
-    farm = _get_farmer_farm(db, current_user)
+    farm = FarmService.get_farm_by_user(db, current_user.id)
+    if not farm:
+        return []
     return FinancialLedgerService.get_transactions(db, farm.id, limit=limit)
 
