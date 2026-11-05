@@ -4,7 +4,7 @@
  */
 
 export const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
+  process.env.NEXT_PUBLIC_API_URL || "https://72.61.97.210/api/v1"
 ).replace(/\/+$/, "");
 
 export const TOKEN_STORAGE_KEY = "jari_access_token";

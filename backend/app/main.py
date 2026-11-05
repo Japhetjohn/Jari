@@ -21,6 +21,20 @@ if settings.BACKEND_CORS_ORIGINS:
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
+@app.get("/")
+@app.get(settings.API_V1_STR)
+@app.get(f"{settings.API_V1_STR}/")
+def root_info():
+    return {
+        "message": "JARI Backend API is running",
+        "status": "online",
+        "version": "0.1.0",
+        "docs_url": "/docs",
+        "health_url": "/health",
+        "api_v1_prefix": settings.API_V1_STR,
+    }
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}

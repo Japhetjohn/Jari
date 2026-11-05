@@ -6,7 +6,6 @@ const https = require("https");
 
 const BASE_HOST = "72.61.97.210";
 const BASE_PORT = 443;
-const VIRTUAL_HOST = "api.bitnova.africa";
 const PREFIX = "/api/v1";
 
 let passedCount = 0;
@@ -18,13 +17,12 @@ function request(options, data) {
     const postData = data ? (typeof data === "string" ? data : JSON.stringify(data)) : null;
 
     const reqOptions = {
-      rejectUnauthorized: false,
+      rejectUnauthorized: true,
       hostname: BASE_HOST,
       port: BASE_PORT,
       path: options.path,
       method: options.method || "GET",
       headers: {
-        Host: VIRTUAL_HOST,
         ...(postData
           ? {
             "Content-Type": "application/json",
@@ -80,7 +78,7 @@ function assert(condition, message) {
 async function main() {
   console.log("=================================================================");
   console.log("   JARI PRODUCTION API AUTOMATED VERIFICATION MATRIX   ");
-  console.log(`   Target: https:// (HTTPS/TLS Port 443) ${BASE_HOST}:${BASE_PORT} (Host: ${VIRTUAL_HOST})`);
+  console.log(`   Target: Direct HTTPS https://${BASE_HOST}:${BASE_PORT} (Trusted Let's Encrypt TLS)`);
   console.log("=================================================================\n");
 
   const runId = Date.now().toString().slice(-6);
