@@ -1,2 +1,13 @@
-# Shared business and system enums to be defined by Developer 2
+import enum
 
+
+class UserRole(str, enum.Enum):
+    FARMER = "farmer"
+    ADMIN = "admin"
+    INSTITUTIONAL_USER = "institutional_user"
+
+
+class AccountStatus(str, enum.Enum):
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    PENDING = "pending"

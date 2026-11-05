@@ -10,7 +10,9 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "JARI Backend API"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
-    SECRET_KEY: str = "temporary_secret_key_to_be_configured_in_environment"
+    SECRET_KEY: str = "temporary_secret_key_to_be_configured_in_environment_min_32_bytes"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    ALGORITHM: str = "HS256"
     DATABASE_URL: str = "postgresql+psycopg://jari_user:jari_dev_password@localhost:5432/jari_db"
     BACKEND_CORS_ORIGINS: List[Union[AnyHttpUrl, str]] = ["http://localhost:3000"]
 
@@ -25,4 +27,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

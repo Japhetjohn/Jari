@@ -5,12 +5,19 @@ from sqlalchemy import pool
 
 from alembic import context
 
+from app.core.config import settings
+from app.database.base import Base
+import app.models  # Ensures all models (User, etc.) are imported and registered on Base.metadata
+
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = None
+target_metadata = Base.metadata
+
+# Override alembic.ini url with settings.DATABASE_URL
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 
 def run_migrations_offline() -> None:
@@ -46,4 +53,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-
