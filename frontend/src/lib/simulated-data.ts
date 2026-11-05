@@ -213,19 +213,19 @@ export const STORAGE_KEYS = {
 const INSTITUTION_REGISTRATIONS_KEY = "jari-simulated-institution-registrations";
 
 export const defaultFarmProfile: SavedFarmProfile = {
-    farmName: "Golden Feathers Poultry",
-    ownerName: "Amina Daniel",
-    phone: "08030000000",
-    community: "Kuru",
-    lga: "Jos South",
+    farmName: "",
+    ownerName: "",
+    phone: "",
+    community: "",
+    lga: "",
     state: "Plateau",
-    establishmentDate: "2020-01-01",
+    establishmentDate: "",
     operationType: "Broiler",
     productionSystem: "Deep litter",
-    numberOfHouses: "4",
+    numberOfHouses: "0",
     waterSource: "Borehole",
-    numberOfWorkers: "6",
-    biosecurity: ["Restricted farm access", "Footbath", "Disinfection", "Visitor control"],
+    numberOfWorkers: "0",
+    biosecurity: [],
 };
 
 export const getFarmProfile = () => readStorage<SavedFarmProfile>(STORAGE_KEYS.farmProfile, defaultFarmProfile);
@@ -233,11 +233,7 @@ export const saveFarmProfile = (value: SavedFarmProfile) => writeWithActivity(ST
 export const getKycApplication = () => readStorage<KycApplication | null>(STORAGE_KEYS.kycApplication, null);
 export const saveKycApplication = (value: KycApplication) => writeWithActivity(STORAGE_KEYS.kycApplication, value);
 
-export const getFlockRecords = () => readStorage<FlockRecord[]>(STORAGE_KEYS.flockRecords, [
-    { name: "Broiler Batch 02", type: "Broiler", house: "House A", birds: 1400, status: "Active", breed: "Ross 308" },
-    { name: "Layer Batch 05", type: "Layer", house: "House B", birds: 1600, status: "Active", breed: "Isa Brown" },
-    { name: "Breeder Batch 01", type: "Breeder", house: "House C", birds: 520, status: "Completed", breed: "Cobb 500" },
-]);
+export const getFlockRecords = () => readStorage<FlockRecord[]>(STORAGE_KEYS.flockRecords, []);
 export const saveFlockRecords = (value: FlockRecord[]) => writeWithActivity(STORAGE_KEYS.flockRecords, value);
 
 export const getFlockMovements = () => readStorage<FarmFlockMovement[]>(STORAGE_KEYS.flockMovements, getFlockRecords().map((flock) => ({
@@ -316,11 +312,7 @@ export const createFlockRecord = (flock: Omit<FlockRecord, "id" | "birds" | "sta
     return created;
 };
 
-export const getPoultryHouses = () => readStorage<FarmHouseRecord[]>(STORAGE_KEYS.poultryHouses, [
-    { name: "House A", system: "Deep litter", capacity: 1200, water: "Borehole", feedStorage: true },
-    { name: "House B", system: "Deep litter", capacity: 1400, water: "Borehole", feedStorage: true },
-    { name: "House C", system: "Battery cage", capacity: 1800, water: "Well", feedStorage: false },
-]);
+export const getPoultryHouses = () => readStorage<FarmHouseRecord[]>(STORAGE_KEYS.poultryHouses, []);
 export const savePoultryHouses = (value: FarmHouseRecord[]) => writeWithActivity(STORAGE_KEYS.poultryHouses, value);
 
 export const createPoultryHouse = (house: FarmHouseRecord) => {
@@ -352,18 +344,10 @@ export const archivePoultryHouse = (name: string) => {
     savePoultryHouses(getPoultryHouses().map((house) => house.name === name ? { ...house, archived: true } : house));
 };
 
-export const getProductionRecords = () => readStorage<ProductionRecord[]>(STORAGE_KEYS.productionRecords, [
-    { id: "production-001", date: "2026-10-10", flock: "Layer Batch 05", type: "Layer", liveBirds: 1600, eggsCollected: 320, goodEggs: 300, damagedEggs: 20, birdsWeighed: 0, averageWeight: 0, birdsReady: 0 },
-    { id: "production-002", date: "2026-10-12", flock: "Broiler Batch 02", type: "Broiler", liveBirds: 1400, eggsCollected: 0, goodEggs: 0, damagedEggs: 0, birdsWeighed: 0, averageWeight: 0, birdsReady: 280 },
-    { id: "production-003", date: "2026-10-18", flock: "Layer Batch 05", type: "Layer", liveBirds: 1600, eggsCollected: 410, goodEggs: 390, damagedEggs: 20, birdsWeighed: 0, averageWeight: 0, birdsReady: 0 },
-]);
+export const getProductionRecords = () => readStorage<ProductionRecord[]>(STORAGE_KEYS.productionRecords, []);
 export const saveProductionRecords = (value: ProductionRecord[]) => writeWithActivity(STORAGE_KEYS.productionRecords, value);
 
-const readSalesRecords = () => readStorage<SalesEntry[]>(STORAGE_KEYS.salesRecords, [
-    { date: "08 Oct 2026", item: "Live broilers", amount: "₦360,000" },
-    { date: "16 Oct 2026", item: "Eggs", amount: "₦200,000" },
-    { date: "24 Oct 2026", item: "Manure", amount: "₦70,000" },
-]);
+const readSalesRecords = () => readStorage<SalesEntry[]>(STORAGE_KEYS.salesRecords, []);
 export const getSalesRecords = () => readSalesRecords().map((record, index) => {
     const amount = numberFromAmount(record.amount);
     const amountReceived = record.amountReceived ?? Math.max(0, amount - (record.outstanding ?? amount));
@@ -371,11 +355,7 @@ export const getSalesRecords = () => readSalesRecords().map((record, index) => {
 });
 export const saveSalesRecords = (value: SalesEntry[]) => writeWithActivity(STORAGE_KEYS.salesRecords, value);
 
-const readExpensesRecords = () => readStorage<ExpenseEntry[]>(STORAGE_KEYS.expensesRecords, [
-    { date: "06 Oct 2026", category: "Labour", amount: "₦120,000" },
-    { date: "14 Oct 2026", category: "Utilities", amount: "₦58,000" },
-    { date: "20 Oct 2026", category: "Veterinary", amount: "₦76,500" },
-]);
+const readExpensesRecords = () => readStorage<ExpenseEntry[]>(STORAGE_KEYS.expensesRecords, []);
 export const getExpensesRecords = () => readExpensesRecords().map((record, index) => {
     const amount = numberFromAmount(record.amount);
     const amountPaid = record.amountPaid ?? Math.max(0, amount - (record.outstanding ?? amount));
@@ -383,11 +363,7 @@ export const getExpensesRecords = () => readExpensesRecords().map((record, index
 });
 export const saveExpensesRecords = (value: ExpenseEntry[]) => writeWithActivity(STORAGE_KEYS.expensesRecords, value);
 
-export const getFarmAssets = () => readStorage<FarmAssetRecord[]>(STORAGE_KEYS.farmAssets, [
-    { name: "Feed mixer", quantity: 1, status: "Working", value: 320000, notes: "Used to prepare feed for the bird groups." },
-    { name: "Water tank", quantity: 3, status: "Working", value: 180000, notes: "Stores water for the farm houses." },
-    { name: "Generator", quantity: 1, status: "Needs repair", value: 410000, notes: "Needs a service check before regular use." },
-]);
+export const getFarmAssets = () => readStorage<FarmAssetRecord[]>(STORAGE_KEYS.farmAssets, []);
 export const saveFarmAssets = (value: FarmAssetRecord[]) => {
     const names = new Set<string>();
     value.forEach((asset) => {
@@ -511,11 +487,7 @@ const writeWithActivity = <T,>(key: string, value: T) => {
     else originalWriteStorage(key, value);
 };
 
-export const getFeedPurchases = () => readStorage<FeedPurchaseRecord[]>(STORAGE_KEYS.feedPurchases, [
-    { id: "purchase-001", date: "2026-10-12", feedType: "Starter", brand: "Top Feed", supplier: "Top Feed Depot", quantity: 120, unit: "bags", bagWeightKg: 25, amount: 240000, amountPaid: 240000, flock: "Broiler Batch 02" },
-    { id: "purchase-002", date: "2026-10-18", feedType: "Finisher", brand: "Unique Feeds", supplier: "Unique Feed Store", quantity: 90, unit: "bags", bagWeightKg: 25, amount: 180000, amountPaid: 180000, flock: "Broiler Batch 02" },
-    { id: "purchase-003", date: "2026-10-29", feedType: "Grower", brand: "Tropical Feed", supplier: "Tropical Farm Supply", quantity: 80, unit: "bags", bagWeightKg: 25, amount: 120000, amountPaid: 120000, flock: "Layer Batch 05" },
-]);
+export const getFeedPurchases = () => readStorage<FeedPurchaseRecord[]>(STORAGE_KEYS.feedPurchases, []);
 export const saveFeedPurchases = (value: FeedPurchaseRecord[]) => writeWithActivity(STORAGE_KEYS.feedPurchases, value);
 export const addFeedPurchase = (purchase: Omit<FeedPurchaseRecord, "id">) => {
     if (!purchase.date || !purchase.feedType.trim() || !purchase.brand.trim()) throw new Error("Choose a purchase date and feed type, then enter the brand.");
@@ -528,11 +500,7 @@ export const addFeedPurchase = (purchase: Omit<FeedPurchaseRecord, "id">) => {
     return created;
 };
 
-export const getFeedUseRecords = () => readStorage<FeedUseRecord[]>(STORAGE_KEYS.feedUse, [
-    { id: "feed-use-001", date: "2026-10-10", feedType: "Starter", quantityKg: 160, flock: "Broiler Batch 02" },
-    { id: "feed-use-002", date: "2026-10-14", feedType: "Grower", quantityKg: 250, flock: "Layer Batch 05" },
-    { id: "feed-use-003", date: "2026-10-21", feedType: "Finisher", quantityKg: 300, flock: "Broiler Batch 02" },
-]);
+export const getFeedUseRecords = () => readStorage<FeedUseRecord[]>(STORAGE_KEYS.feedUse, []);
 export const saveFeedUseRecords = (value: FeedUseRecord[]) => writeWithActivity(STORAGE_KEYS.feedUse, value);
 export const getFeedInventory = () => {
     const purchases = getFeedPurchases();
@@ -558,10 +526,7 @@ export const addFeedUse = (entry: Omit<FeedUseRecord, "id">) => {
 export type VaccinationRecord = { id: string; flock: string; vaccine: string; date: string; birds: number; nextDate?: string; givenBy?: string; notes?: string };
 export type HealthIncidentRecord = { id: string; flock: string; date: string; symptoms: string; affectedBirds: number; birdsLost?: number; action: string; confirmedDiagnosis?: string; outcome?: string; notes?: string };
 export type TreatmentRecord = { id: string; flock: string; date: string; treatment: string; medicine?: string; birdsTreated: number; givenBy?: string; notes?: string };
-export const getVaccinationRecords = () => readStorage<VaccinationRecord[]>(STORAGE_KEYS.vaccinations, [
-    { id: "vaccine-001", flock: "Broiler Batch 02", vaccine: "Newcastle disease vaccine", date: "2026-10-05", birds: 1400, nextDate: "2026-11-05", givenBy: "Farm manager", notes: "All birds covered." },
-    { id: "vaccine-002", flock: "Layer Batch 05", vaccine: "Fowl pox vaccine", date: "2026-10-11", birds: 1600, nextDate: "2026-11-11", givenBy: "Animal health worker" },
-]);
+export const getVaccinationRecords = () => readStorage<VaccinationRecord[]>(STORAGE_KEYS.vaccinations, []);
 export const saveVaccinationRecords = (value: VaccinationRecord[]) => writeWithActivity(STORAGE_KEYS.vaccinations, value);
 export const addVaccinationRecord = (record: Omit<VaccinationRecord, "id">) => {
     const flock = getFlockRecords().find((item) => item.name === record.flock && item.status === "Active");
@@ -571,9 +536,7 @@ export const addVaccinationRecord = (record: Omit<VaccinationRecord, "id">) => {
     saveVaccinationRecords([...getVaccinationRecords(), created]);
     return created;
 };
-export const getHealthIncidents = () => readStorage<HealthIncidentRecord[]>(STORAGE_KEYS.healthIncidents, [
-    { id: "health-001", flock: "Broiler Batch 02", date: "2026-10-20", symptoms: "Reduced appetite", affectedBirds: 12, action: "Separated affected birds and contacted animal health worker", outcome: "Being monitored", notes: "Symptoms observed by farm staff; no diagnosis recorded." },
-]);
+export const getHealthIncidents = () => readStorage<HealthIncidentRecord[]>(STORAGE_KEYS.healthIncidents, []);
 export const saveHealthIncidents = (value: HealthIncidentRecord[]) => writeWithActivity(STORAGE_KEYS.healthIncidents, value);
 export const addHealthIncident = (record: Omit<HealthIncidentRecord, "id"> & { birdsLost?: number }) => {
     const flock = getFlockRecords().find((item) => item.name === record.flock && item.status === "Active");

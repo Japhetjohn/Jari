@@ -9,6 +9,7 @@ import {
   ApiError,
 } from "@/lib/api-client";
 import { saveInstitutionRegistration, type InstitutionRegistrationRecord } from "@/lib/simulated-data";
+import { syncAllFromBackend } from "@/lib/backend-sync";
 
 export type MockRole = "farmer" | "admin" | "verification_agent" | "institutional_user";
 
@@ -115,6 +116,10 @@ export function logoutSimulation(): void {
   if (typeof window !== "undefined") {
     removeStoredToken();
     window.localStorage.removeItem(SESSION_STORAGE_KEY);
+    Object.keys(window.localStorage)
+      .filter((k) => k.startsWith("jari-demo:v1:"))
+      .forEach((k) => window.localStorage.removeItem(k));
+    window.dispatchEvent(new CustomEvent("jari:mock-data-changed", { detail: { key: "*" } }));
   }
 }
 
@@ -125,29 +130,25 @@ export function logoutSimulation(): void {
 export async function loginWithBackend(phone: string, password: string): Promise<ActiveSession> {
   const normalizedPhone = normalizePhone(phone);
 
+  const res = await authApi.login({ phone: normalizedPhone, password });
+  const user = res.user;
+  setStoredToken(res.access_token);
+
+  const session: ActiveSession = {
+    id: String(user.id),
+    fullName: user.full_name,
+    phone: normalizePhone(user.phone),
+    role: (user.role as MockRole) || "farmer",
+    accessToken: res.access_token,
+  };
+
+  saveSession(session);
   try {
-    const res = await authApi.login({ phone: normalizedPhone, password });
-    const user = res.user;
-    setStoredToken(res.access_token);
-
-    const session: ActiveSession = {
-      id: String(user.id),
-      fullName: user.full_name,
-      phone: normalizePhone(user.phone),
-      role: (user.role as MockRole) || "farmer",
-      accessToken: res.access_token,
-    };
-
-    saveSession(session);
-    return session;
-  } catch (error) {
-    if (error instanceof ApiError && error.status !== 0) {
-      throw error;
-    }
-
-    // Network unreachable -> fallback to simulated demo accounts
-    return loginWithSimulation(normalizedPhone, password);
+    await syncAllFromBackend();
+  } catch {
+    // Non-fatal if initial sync encounters empty collections
   }
+  return session;
 }
 
 /**
@@ -197,22 +198,14 @@ export async function registerWithBackend(
     throw new Error("Password must be at least 6 characters long.");
   }
 
-  try {
-    await authApi.register({
-      full_name: trimmedName,
-      phone: normalizedPhone,
-      password,
-      role: "farmer",
-    });
+  await authApi.register({
+    full_name: trimmedName,
+    phone: normalizedPhone,
+    password,
+    role: "farmer",
+  });
 
-    return await loginWithBackend(normalizedPhone, password);
-  } catch (error) {
-    if (error instanceof ApiError && error.status !== 0) {
-      throw error;
-    }
-
-    return registerWithSimulation(trimmedName, normalizedPhone, password);
-  }
+  return await loginWithBackend(normalizedPhone, password);
 }
 
 /**

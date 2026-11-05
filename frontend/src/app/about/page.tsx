@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ClipboardList, HeartPulse, Landmark, MapPin, ShieldCheck, Sprout, UserRound } from "lucide-react";
+import { ArrowRight, ClipboardList, HeartPulse, Landmark, MapPin, ShieldCheck, Sprout } from "lucide-react";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
@@ -17,7 +17,11 @@ const steps = [
   { number: "03", icon: ShieldCheck, title: "Find relevant support", description: "A clear profile can help farmers explore localized advisory and start finance or insurance conversations." },
 ];
 
-const teamPlaceholders = ["01", "02", "03"];
+const teamMembers = [
+  { name: "Pererat Timothy", role: "Founder", profession: "Software Engineer", image: "/images/team/pererat.jpeg" },
+  { name: "Japhet John", role: "Co-founder", profession: "Blockchain Developer", image: "/images/team/japhet.jpeg" },
+  { name: "Fatima .S. Abubakar", role: "Co-founder", profession: "Product Manager", image: "/images/team/fatima.jpeg" },
+];
 
 export default function AboutPage() {
   return (
@@ -93,16 +97,18 @@ export default function AboutPage() {
             <h2 className="mt-3 font-serif text-3xl leading-[1.05] tracking-[-.035em] sm:text-5xl">A team working alongside poultry farmers.</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-[#697268]">Meet the people building a clearer path from farm information to practical support.</p>
           </div></ScrollReveal>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:mt-11 lg:grid-cols-3">
-            {teamPlaceholders.map((member, index) => <ScrollReveal key={member} delay={index * 90}><article className="team-card h-full overflow-hidden rounded-[1.4rem] bg-white p-3.5 sm:p-4">
-              <div className="team-headshot relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[1.05rem] bg-[#e7ecdf]">
-                <span aria-hidden="true" className="team-portrait-glow absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/50" />
-                <span className="relative flex h-24 w-24 items-center justify-center rounded-full bg-[#f5f6f0] text-[#6c8564] sm:h-28 sm:w-28"><UserRound size={42} strokeWidth={1.2} /></span>
-                <span className="absolute bottom-3 left-3 rounded-full bg-white/85 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-[#697268]">Headshot {member}</span>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:mt-11 lg:grid-cols-3 lg:gap-5">
+            {teamMembers.map((member, index) => <ScrollReveal key={member.name} delay={index * 90}><article className="team-card group relative grid min-h-[190px] grid-cols-[38%_1fr] overflow-hidden rounded-[1.4rem] border border-[#e7e9e2] bg-white shadow-[0_12px_36px_-30px_rgba(28,54,33,.4)] sm:block sm:min-h-0 sm:border-0 sm:shadow-[0_18px_44px_-34px_rgba(28,54,33,.6)]">
+              <div className="team-headshot relative min-h-full overflow-hidden bg-[#dfe6d8] sm:aspect-[4/5] sm:min-h-0">
+                <Image src={member.image} alt={`${member.name}, ${member.role} of JARI`} fill sizes="(max-width: 640px) 38vw, (max-width: 1024px) 44vw, 30vw" className="object-cover object-center transition-transform duration-700 ease-out sm:group-hover:scale-[1.04]" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#17291c]/10 to-transparent sm:bg-gradient-to-t sm:from-[#17291c]/90 sm:via-[#17291c]/15 sm:to-transparent" />
+                <span className="absolute left-2 top-2 rounded-full border border-white/60 bg-white/90 px-2 py-1 text-[8px] font-bold uppercase tracking-[.12em] text-[#426044] sm:left-3 sm:top-3 sm:px-2.5 sm:text-[9px]">{member.role}</span>
+                <span className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-[9px] font-bold tracking-wide text-[#426044] sm:bottom-auto sm:left-3 sm:right-3 sm:top-3 sm:h-8 sm:w-8">0{index + 1}</span>
               </div>
-              <div className="flex items-center justify-between gap-3 px-1 pb-1 pt-4">
-                <div><h3 className="font-serif text-lg font-medium text-[#29352a]">Name to add</h3><p className="mt-1 text-xs text-[#71806a]">Role to add</p></div>
-                <span className="text-[10px] font-bold tracking-[.14em] text-[#9aa294]">0{index + 1}</span>
+              <div className="flex flex-col justify-center px-3 py-4 sm:absolute sm:inset-x-0 sm:bottom-0 sm:block sm:bg-gradient-to-t sm:from-[#17291c]/95 sm:via-[#17291c]/70 sm:to-transparent sm:px-5 sm:pb-5 sm:pt-16">
+                <p className="text-[8px] font-bold uppercase tracking-[.16em] text-[#66815e] sm:text-[#d5e2c9]">JARI team</p>
+                <h3 className="mt-1.5 font-serif text-base font-medium leading-tight tracking-[-.02em] text-[#29352a] sm:mt-2 sm:text-2xl sm:text-white">{member.name}</h3>
+                <p className="mt-1.5 text-[10px] font-medium leading-snug text-[#71806a] sm:mt-1 sm:text-xs sm:text-white/80">{member.profession}</p>
               </div>
             </article></ScrollReveal>)}
           </div>
