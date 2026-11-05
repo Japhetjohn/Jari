@@ -10,6 +10,7 @@ from app.database.base import Base
 if TYPE_CHECKING:
     from app.models.user import User
     from app.models.poultry_house import PoultryHouse
+    from app.models.flock import Flock
 
 
 class Farm(Base):
@@ -52,7 +53,11 @@ class Farm(Base):
         back_populates="farm",
         cascade="all, delete-orphan"
     )
+    flocks: Mapped[List["Flock"]] = relationship(
+        "Flock",
+        back_populates="farm",
+        cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Farm {self.farm_name} (owner_id={self.user_id})>"
-

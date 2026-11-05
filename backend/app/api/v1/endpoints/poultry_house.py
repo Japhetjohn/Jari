@@ -32,7 +32,7 @@ def _get_farmer_farm(db: Session, user: User):
     "",
     response_model=List[PoultryHouseResponse],
     summary="List poultry houses",
-    description="List all poultry houses for the authenticated farmer's farm. Archived houses are excluded by default."
+    description="List all poultry houses for the authenticated farmer's farm with live flock utilization. Archived houses are excluded by default."
 )
 def list_houses(
     include_archived: bool = Query(False, description="Set to true to include archived houses"),
@@ -42,10 +42,9 @@ def list_houses(
     farm = _get_farmer_farm(db, current_user)
     houses = PoultryHouseService.get_houses_by_farm(db, farm.id, include_archived=include_archived)
 
-    # Attach dynamic utilization calculations
     responses = []
     for h in houses:
-        current_birds = getattr(h, "current_birds", 0) or 0
+        current_birds = PoultryHouseService.get_house_current_birds(db, h.id)
         available_capacity = max(0, h.capacity - current_birds)
         resp = PoultryHouseResponse.model_validate(h)
         resp.current_birds = current_birds
@@ -95,7 +94,7 @@ def update_house(
     farm = _get_farmer_farm(db, current_user)
     try:
         house = PoultryHouseService.update_house(db, farm=farm, house_id=id, data=data)
-        current_birds = getattr(house, "current_birds", 0) or 0
+        current_birds = PoultryHouseService.get_house_current_birds(db, house.id)
         resp = PoultryHouseResponse.model_validate(house)
         resp.current_birds = current_birds
         resp.available_capacity = max(0, house.capacity - current_birds)
@@ -121,15 +120,13 @@ def archive_house(
     farm = _get_farmer_farm(db, current_user)
     try:
         archived_house = PoultryHouseService.archive_house(db, farm=farm, house_id=id)
-        current_birds = getattr(archived_house, "current_birds", 0) or 0
+        current_birds = PoultryHouseService.get_house_current_birds(db, archived_house.id)
         resp = PoultryHouseResponse.model_validate(archived_house)
         resp.current_birds = current_birds
         resp.available_capacity = max(0, archived_house.capacity - current_birds)
         return resp
     except ValueError as e:
-        # If blocked by active birds, return 400 Bad Request / 409 Conflict as specified
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-

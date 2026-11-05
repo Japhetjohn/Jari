@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 from sqlalchemy import String, Integer, Boolean, DateTime, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -9,6 +9,7 @@ from app.database.base import Base
 
 if TYPE_CHECKING:
     from app.models.farm import Farm
+    from app.models.flock import Flock
 
 
 class PoultryHouse(Base):
@@ -40,6 +41,7 @@ class PoultryHouse(Base):
 
     # Relationships
     farm: Mapped["Farm"] = relationship("Farm", back_populates="houses")
+    flocks: Mapped[List["Flock"]] = relationship("Flock", back_populates="house")
 
     __table_args__ = (
         UniqueConstraint("farm_id", "name", name="uq_farm_house_name"),
@@ -47,4 +49,3 @@ class PoultryHouse(Base):
 
     def __repr__(self) -> str:
         return f"<PoultryHouse {self.name} (farm_id={self.farm_id}, cap={self.capacity})>"
-
