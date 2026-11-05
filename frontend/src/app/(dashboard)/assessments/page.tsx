@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowRight, Bird, ClipboardList, HeartPulse, Wallet } from "lucide-react";
-import { getKycApplication } from "@/lib/simulated-data";
-import type { KycApplication } from "@/lib/simulated-data";
+import { getKycApplication } from "@/services";
+import type { KycApplication } from "@/services";
 
 const areas = [
   { title: "Your farm details", detail: "Farm name, location and the way your farm is set up.", icon: ClipboardList, href: "/farm" },

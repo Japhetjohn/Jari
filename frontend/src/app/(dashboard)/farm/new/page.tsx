@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { defaultFarmProfile, getFarmProfile, saveFarmProfile } from "@/lib/simulated-data";
+import { defaultFarmProfile, getFarmProfile, saveFarmProfile } from "@/services";
 
 const initialForm = {
     farmName: "",

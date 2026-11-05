@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Activity, ArrowRight, CalendarDays, MapPin, Pencil, Sprout, Users, Warehouse } from "lucide-react";
-import { defaultFarmProfile, getFarmProfile } from "@/lib/simulated-data";
+import { defaultFarmProfile, getFarmProfile, getPoultryHouses } from "@/services";
 
 function ProfileValue({ label, value }: { label: string; value?: string | number }) {
   return <div className="min-w-0 py-2"><dt className="text-[10px] font-semibold uppercase tracking-[.1em] text-[#869082]">{label}</dt><dd className="mt-1 break-words text-sm font-medium text-[#354237]">{value || "Not added yet"}</dd></div>;
@@ -11,9 +11,11 @@ function ProfileValue({ label, value }: { label: string; value?: string | number
 
 export default function FarmPage() {
   const [farm, setFarm] = useState(defaultFarmProfile);
+  const [houseCount, setHouseCount] = useState(0);
 
   useEffect(() => {
     setFarm(getFarmProfile());
+    setHouseCount(getPoultryHouses().length);
   }, []);
 
   const location = [farm.community, farm.lga, farm.state].filter(Boolean).join(", ");
@@ -39,7 +41,7 @@ export default function FarmPage() {
       </section>
 
       <section aria-label="Farm summary" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        {[{ label: "Poultry houses", value: farm.numberOfHouses || "0", unit: "registered", icon: Warehouse }, { label: "Farm workers", value: farm.numberOfWorkers || "0", unit: "listed on profile", icon: Users }, { label: "Established", value: farm.establishmentDate ? new Date(farm.establishmentDate).getFullYear() : "Not set", unit: "year", icon: CalendarDays }].map(({ label, value, unit, icon: Icon }) => <article key={label} className="rounded-[1.2rem] bg-white p-4 sm:rounded-[1.35rem] sm:p-5"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#edf2e8] text-[#55734f]"><Icon size={15} /></span><p className="mt-4 text-[10px] font-semibold text-[#788174] sm:text-xs">{label}</p><p className="mt-1 font-serif text-2xl font-medium text-[#29352a]">{value}</p><p className="mt-0.5 text-[9px] text-[#899184]">{unit}</p></article>)}
+        {[{ label: "Farm houses", value: houseCount, unit: "registered", icon: Warehouse }, { label: "Farm workers", value: farm.numberOfWorkers || "0", unit: "listed on profile", icon: Users }, { label: "Established", value: farm.establishmentDate ? new Date(farm.establishmentDate).getFullYear() : "Not set", unit: "year", icon: CalendarDays }].map(({ label, value, unit, icon: Icon }) => <article key={label} className="rounded-[1.2rem] bg-white p-4 sm:rounded-[1.35rem] sm:p-5"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#edf2e8] text-[#55734f]"><Icon size={15} /></span><p className="mt-4 text-[10px] font-semibold text-[#788174] sm:text-xs">{label}</p><p className="mt-1 font-serif text-2xl font-medium text-[#29352a]">{value}</p><p className="mt-0.5 text-[9px] text-[#899184]">{unit}</p></article>)}
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.1fr_.9fr]">

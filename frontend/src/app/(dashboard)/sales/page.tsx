@@ -1,56 +1,13 @@
+"use client";
 import Link from "next/link";
-
-const summary = [
-    { label: "Total sales", value: "₦2.4M" },
-    { label: "Live birds sold", value: "1,150" },
-    { label: "Egg revenue", value: "₦920k" },
-    { label: "Outstanding sales", value: "₦260k" },
-];
-
-const entries = [
-    { date: "08 Oct 2026", item: "Live broilers", amount: "₦360,000" },
-    { date: "16 Oct 2026", item: "Eggs", amount: "₦200,000" },
-    { date: "24 Oct 2026", item: "Manure", amount: "₦70,000" },
-];
-
+import { useEffect, useState } from "react";
+import { getSalesRecords, recordSalePayment, type SalesEntry } from "@/services";
+const money = (amount: number | string) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(String(amount).replace(/[^\d.-]/g, "")) || 0);
+const amount = (value: number | string) => Number(String(value).replace(/[^\d.-]/g, "")) || 0;
 export default function SalesPage() {
-    return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Sales</p>
-                    <h2 className="mt-2 text-3xl font-bold text-slate-900">Sales and revenue</h2>
-                </div>
-                <Link href="/sales/new" className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
-                    Add sale
-                </Link>
-            </div>
-
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {summary.map((item) => (
-                    <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <p className="text-sm text-slate-500">{item.label}</p>
-                        <p className="mt-3 text-2xl font-bold text-slate-900">{item.value}</p>
-                    </div>
-                ))}
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Recent sales</h3>
-                <div className="mt-4 space-y-3">
-                    {entries.map((entry) => (
-                        <div key={`${entry.date}-${entry.item}`} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3">
-                            <div>
-                                <p className="font-medium text-slate-900">{entry.item}</p>
-                                <p className="text-sm text-slate-500">{entry.date}</p>
-                            </div>
-                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                                {entry.amount}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </section>
-        </div>
-    );
+  const [records, setRecords] = useState<SalesEntry[]>([]);
+  useEffect(() => { const sync = () => setRecords(getSalesRecords()); sync(); window.addEventListener("jari:mock-data-changed", sync); return () => window.removeEventListener("jari:mock-data-changed", sync); }, []);
+  const total = records.reduce((sum, item) => sum + (Number(String(item.amount).replace(/[^\d.-]/g, "")) || 0), 0);
+  const outstanding = records.reduce((sum, item) => sum + (item.outstanding ?? 0), 0);
+  return <div className="space-y-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold uppercase tracking-[.18em] text-emerald-700">Sales</p><h2 className="mt-2 text-3xl font-bold text-slate-900">Sales and revenue</h2></div><Link href="/sales/new" className="rounded-full bg-emerald-600 px-4 py-2.5 text-center text-sm font-semibold text-white">Add sale</Link></div><section className="grid gap-4 sm:grid-cols-2"><div className="rounded-2xl bg-white p-5"><p className="text-sm text-slate-500">Recorded sales</p><p className="mt-3 text-2xl font-semibold">{money(total)}</p></div><div className="rounded-2xl bg-white p-5"><p className="text-sm text-slate-500">Still to collect</p><p className="mt-3 text-2xl font-semibold">{money(outstanding)}</p></div></section><section className="rounded-2xl bg-white p-5"><h3 className="text-lg font-semibold">Recent sales</h3><div className="mt-4 space-y-3">{records.slice().reverse().map((item, index) => { const balance = item.outstanding ?? Math.max(0, amount(item.amount) - (item.amountReceived || 0)); return <div key={item.id || `${item.date}-${index}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-4"><div><p className="font-medium">{item.product || item.item || "Poultry products"}</p><p className="text-sm text-slate-500">{item.date} · {item.status || (balance ? "Payment due" : "Paid")}</p></div><div className="flex items-center gap-3"><span className="text-sm font-semibold text-emerald-700">{money(item.amount)}</span>{balance > 0 && item.id && <button type="button" onClick={() => { recordSalePayment(item.id!, balance); setRecords(getSalesRecords()); }} className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-emerald-800">Record full payment</button>}</div></div>; })}{!records.length && <p className="py-8 text-center text-sm text-slate-500">No sales recorded yet.</p>}</div></section></div>;
 }

@@ -1,163 +1,186 @@
-import type {
-    AssetRecord,
-    DashboardSummary,
-    ExpenseRecord,
-    FarmProfile,
-    FeedConsumption,
-    FeedPurchase,
-    FlockRecord,
-    NotificationItem,
-    OpportunityItem,
-    SalesRecord,
-} from "@/types";
+import { farmNotifications } from "@/lib/notifications";
+import {
+    addExpenseRecord,
+    addFeedPurchase,
+    addFeedUse,
+    addFlockMovement,
+    addHealthIncident,
+    addProductionRecord,
+    addSaleRecord,
+    recordSalePayment,
+    recordExpensePayment,
+    addVaccinationRecord,
+    applyToOpportunity,
+    addFarmDocument,
+    archivePoultryHouse,
+    createPoultryHouse,
+    defaultFarmProfile,
+    createFlockRecord,
+    getDashboardTotals,
+    getExpensesRecords,
+    getFarmAssets,
+    getFarmProfile as getSavedFarmProfile,
+    getFeedPurchases,
+    getFeedInventory,
+    getFeedUseRecords,
+    getFlockRecords,
+    getFlockMovements,
+    getProductionRecords,
+    getOpportunityApplications,
+    getUserPreferences,
+    getFarmDocuments,
+    getPoultryHouses,
+    getSalesRecords,
+    saveExpensesRecords,
+    saveFarmAssets,
+    saveFarmProfile,
+    saveFeedPurchases,
+    saveFeedUseRecords,
+    saveFlockRecords,
+    saveFlockMovements,
+    saveProductionRecords,
+    savePoultryHouses,
+    saveSalesRecords,
+    updatePoultryHouse,
+    updateOpportunityApplication,
+    saveUserPreferences,
+    removeFarmDocument,
+} from "@/lib/simulated-data";
+import type { ExpenseEntry, FarmAssetRecord, FeedPurchaseRecord, FeedUseRecord, FlockRecord, ProductionRecord, SavedFarmProfile } from "@/lib/simulated-data";
+import type { AssetRecord, DashboardSummary, ExpenseRecord, FarmProfile, FeedConsumption, FeedPurchase, FlockRecord as ApiFlock, NotificationItem, OpportunityItem, SalesRecord } from "@/types";
 
-const delay = (ms = 250) => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms = 80) => new Promise((resolve) => setTimeout(resolve, ms));
+const currency = (amount: number | string) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(String(amount).replace(/[^\d.-]/g, "")) || 0);
 
-const mockFarmProfile: FarmProfile = {
-    id: "farm-001",
-    name: "Golden Feathers Poultry",
-    ownerName: "Amina Daniel",
-    phone: "08030000000",
-    community: "Kuru",
-    lga: "Jos South",
-    state: "Plateau",
-    establishmentDate: "2020-01-01",
-    operationType: "Broiler",
-    productionSystem: "Deep litter",
-    numberOfHouses: 4,
-    waterSource: "Borehole",
-    numberOfWorkers: 6,
-    biosecurityMeasures: ["Restricted farm access", "Footbath", "Disinfection", "Visitor control"],
-    housingCapacity: 5000,
-};
+const farmForApi = (farm: SavedFarmProfile): FarmProfile => ({
+    id: "farm-primary",
+    name: farm.farmName,
+    ownerName: farm.ownerName,
+    phone: farm.phone,
+    community: farm.community,
+    lga: farm.lga,
+    state: farm.state,
+    establishmentDate: farm.establishmentDate,
+    operationType: farm.operationType as FarmProfile["operationType"],
+    productionSystem: farm.productionSystem as FarmProfile["productionSystem"],
+    numberOfHouses: Number(farm.numberOfHouses) || 0,
+    waterSource: farm.waterSource as FarmProfile["waterSource"],
+    numberOfWorkers: Number(farm.numberOfWorkers) || 0,
+    biosecurityMeasures: farm.biosecurity,
+    housingCapacity: getPoultryHouses().reduce((total, house) => total + house.capacity, 0),
+});
 
-const mockFlocks: FlockRecord[] = [
-    {
-        id: "flock-001",
-        name: "Broiler Batch 02",
-        type: "Broiler",
-        breed: "Ross 308",
-        house: "House A",
-        birds: 1400,
-        status: "Active",
-        acquisitionDate: "2026-09-10",
-        cycleStart: "2026-09-12",
-    },
-    {
-        id: "flock-002",
-        name: "Layer Batch 05",
-        type: "Layer",
-        breed: "Isa Brown",
-        house: "House B",
-        birds: 1600,
-        status: "Active",
-        acquisitionDate: "2026-08-08",
-        cycleStart: "2026-08-11",
-    },
-    {
-        id: "flock-003",
-        name: "Breeder Batch 01",
-        type: "Breeder",
-        breed: "Cobb 500",
-        house: "House C",
-        birds: 520,
-        status: "Completed",
-        acquisitionDate: "2026-05-14",
-        cycleStart: "2026-05-20",
-    },
-];
-
-const mockFeedPurchases: FeedPurchase[] = [
-    { id: "feed-purchase-001", date: "2026-10-12", feedType: "Starter", brand: "Top Feed", quantity: "120 bags", amount: "₦240,000" },
-    { id: "feed-purchase-002", date: "2026-10-18", feedType: "Finisher", brand: "Unique Feeds", quantity: "90 bags", amount: "₦180,000" },
-    { id: "feed-purchase-003", date: "2026-10-29", feedType: "Grower", brand: "Tropical Feed", quantity: "80 bags", amount: "₦120,000" },
-];
-
-const mockFeedConsumption: FeedConsumption[] = [
-    { id: "feed-consumption-001", date: "2026-10-10", feedType: "Starter", quantity: "160 kg" },
-    { id: "feed-consumption-002", date: "2026-10-14", feedType: "Grower", quantity: "250 kg" },
-    { id: "feed-consumption-003", date: "2026-10-21", feedType: "Finisher", quantity: "300 kg" },
-];
-
-const mockSales: SalesRecord[] = [
-    { id: "sale-001", date: "2026-10-08", product: "Live birds", amount: "₦360,000" },
-    { id: "sale-002", date: "2026-10-16", product: "Eggs", amount: "₦200,000" },
-    { id: "sale-003", date: "2026-10-24", product: "Manure", amount: "₦70,000" },
-];
-
-const mockExpenses: ExpenseRecord[] = [
-    { id: "expense-001", date: "2026-10-06", category: "Labour", amount: "₦120,000" },
-    { id: "expense-002", date: "2026-10-14", category: "Utilities", amount: "₦58,000" },
-    { id: "expense-003", date: "2026-10-20", category: "Veterinary", amount: "₦76,500" },
-];
-
-const mockAssets: AssetRecord[] = [
-    { id: "asset-001", name: "Feed mixer", quantity: 1, status: "Functional", value: "₦320,000" },
-    { id: "asset-002", name: "Water tank", quantity: 3, status: "Functional", value: "₦180,000" },
-    { id: "asset-003", name: "Generator", quantity: 1, status: "Needs repair", value: "₦410,000" },
-];
-
-const mockDashboard: DashboardSummary = {
-    activeFlocks: "8",
-    revenueThisMonth: "₦1.8M",
-    feedCost: "₦420k",
-    riskScore: "Low",
-};
-
-const mockOpportunities: OpportunityItem[] = [
-    { id: "opportunity-001", name: "Poultry Expansion Grant", type: "Grant", match: "High match" },
-    { id: "opportunity-002", name: "Working Capital Facility", type: "Loan", match: "Medium match" },
-    { id: "opportunity-003", name: "Broiler Health Insurance", type: "Insurance", match: "Medium match" },
-];
-
-const mockNotifications: NotificationItem[] = [
-    { id: "notif-001", title: "Vaccination reminder", detail: "Newcastle vaccine is due in 3 days.", time: "2 hours ago" },
-    { id: "notif-002", title: "Feed stock update", detail: "Starter feed inventory is running low.", time: "Today" },
-    { id: "notif-003", title: "Opportunity match", detail: "A poultry expansion grant matches your farm profile.", time: "Yesterday" },
-];
+const flockForApi = (flock: FlockRecord): ApiFlock => ({
+    id: flock.id || flock.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    name: flock.name,
+    type: flock.type as ApiFlock["type"],
+    breed: flock.breed || "Not added",
+    house: flock.house,
+    birds: flock.birds,
+    status: flock.status,
+    acquisitionDate: flock.acquisitionDate || "",
+    cycleStart: flock.cycleStart || "",
+});
 
 export const mockApi = {
-    getDashboardSummary: async (): Promise<DashboardSummary> => {
+    async getDashboardSummary(): Promise<DashboardSummary> {
         await delay();
-        return mockDashboard;
+        const totals = getDashboardTotals();
+        return { activeFlocks: String(totals.activeFlocks), revenueThisMonth: currency(totals.salesTotal), feedCost: currency(totals.feedTotal), riskScore: "Review needed" };
     },
-    getFarmProfile: async (): Promise<FarmProfile> => {
-        await delay();
-        return mockFarmProfile;
-    },
-    getFlocks: async (): Promise<FlockRecord[]> => {
-        await delay();
-        return mockFlocks;
-    },
-    getFeedPurchases: async (): Promise<FeedPurchase[]> => {
-        await delay();
-        return mockFeedPurchases;
-    },
-    getFeedConsumption: async (): Promise<FeedConsumption[]> => {
-        await delay();
-        return mockFeedConsumption;
-    },
-    getSales: async (): Promise<SalesRecord[]> => {
-        await delay();
-        return mockSales;
-    },
-    getExpenses: async (): Promise<ExpenseRecord[]> => {
-        await delay();
-        return mockExpenses;
-    },
-    getAssets: async (): Promise<AssetRecord[]> => {
-        await delay();
-        return mockAssets;
-    },
-    getOpportunities: async (): Promise<OpportunityItem[]> => {
-        await delay();
-        return mockOpportunities;
-    },
-    getNotifications: async (): Promise<NotificationItem[]> => {
-        await delay();
-        return mockNotifications;
-    },
+    async getFarmProfile(): Promise<FarmProfile> { await delay(); return farmForApi(getSavedFarmProfile() || defaultFarmProfile); },
+    async getFlocks(): Promise<ApiFlock[]> { await delay(); return getFlockRecords().map(flockForApi); },
+    async getFeedPurchases(): Promise<FeedPurchase[]> { await delay(); return getFeedPurchases().map((purchase) => ({ id: purchase.id, date: purchase.date, feedType: purchase.feedType as FeedPurchase["feedType"], brand: purchase.brand, quantity: `${purchase.quantity} ${purchase.unit}`, amount: currency(purchase.amount) })); },
+    async getFeedConsumption(): Promise<FeedConsumption[]> { await delay(); return getFeedUseRecords().map((entry) => ({ id: entry.id, date: entry.date, feedType: entry.feedType as FeedConsumption["feedType"], quantity: `${entry.quantityKg} kg` })); },
+    async getSales(): Promise<SalesRecord[]> { await delay(); return getSalesRecords().map((record) => ({ id: record.id || record.date, date: record.date, product: (record.product || record.item || "Other poultry products") as SalesRecord["product"], amount: currency(record.amount) })); },
+    async getExpenses(): Promise<ExpenseRecord[]> { await delay(); return getExpensesRecords().map((record) => ({ id: record.id || record.date, date: record.date, category: record.category, amount: currency(record.amount) })); },
+    async getAssets(): Promise<AssetRecord[]> { await delay(); return getFarmAssets().map((asset) => ({ id: asset.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), name: asset.name, quantity: asset.quantity, status: asset.status === "Working" ? "Functional" : asset.status, value: currency(asset.value) })); },
+    async getOpportunities(): Promise<OpportunityItem[]> { await delay(); return [
+        { id: "opportunity-001", name: "Poultry Expansion Grant", type: "Grant", match: "High match" },
+        { id: "opportunity-002", name: "Working Capital Facility", type: "Loan", match: "Medium match" },
+        { id: "opportunity-003", name: "Broiler Health Insurance", type: "Insurance", match: "Medium match" },
+    ]; },
+    async getNotifications(): Promise<NotificationItem[]> { await delay(); return farmNotifications.map(({ id, title, detail, time }) => ({ id, title, detail, time })); },
+    async updateFarm(profile: SavedFarmProfile) { await delay(); saveFarmProfile(profile); return profile; },
+    async createFlock(flocks: FlockRecord[]) { await delay(); saveFlockRecords(flocks); return flocks; },
+    async createHouse(houses: ReturnType<typeof getPoultryHouses>) { await delay(); savePoultryHouses(houses); return houses; },
+    async addFarmHouse(house: Parameters<typeof createPoultryHouse>[0]) { await delay(); return createPoultryHouse(house); },
+    async archiveFarmHouse(name: string) { await delay(); archivePoultryHouse(name); },
+    async createFeedPurchase(purchases: FeedPurchaseRecord[]) { await delay(); saveFeedPurchases(purchases); return purchases; },
+    async createFeedUse(records: FeedUseRecord[]) { await delay(); saveFeedUseRecords(records); return records; },
+    async createProduction(records: ProductionRecord[]) { await delay(); saveProductionRecords(records); return records; },
+    async createSale(records: ReturnType<typeof getSalesRecords>) { await delay(); saveSalesRecords(records); return records; },
+    async createExpense(records: ExpenseEntry[]) { await delay(); saveExpensesRecords(records); return records; },
+    async updateAssets(records: FarmAssetRecord[]) { await delay(); saveFarmAssets(records); return records; },
+    async recordFeedPurchase(record: Parameters<typeof addFeedPurchase>[0]) { await delay(); return addFeedPurchase(record); },
+    async recordFeedUse(record: Parameters<typeof addFeedUse>[0]) { await delay(); return addFeedUse(record); },
+    async recordProduction(record: Parameters<typeof addProductionRecord>[0]) { await delay(); return addProductionRecord(record); },
+    async recordSale(record: Parameters<typeof addSaleRecord>[0]) { await delay(); return addSaleRecord(record); },
+    async recordExpense(record: Parameters<typeof addExpenseRecord>[0]) { await delay(); return addExpenseRecord(record); },
+    async collectSalePayment(id: string, amount: number) { await delay(); return recordSalePayment(id, amount); },
+    async payExpenseBalance(id: string, amount: number) { await delay(); return recordExpensePayment(id, amount); },
+    async recordVaccination(record: Parameters<typeof addVaccinationRecord>[0]) { await delay(); return addVaccinationRecord(record); },
+    async recordHealthIncident(record: Parameters<typeof addHealthIncident>[0]) { await delay(); return addHealthIncident(record); },
 };
 
 export type MockApi = typeof mockApi;
 
+export {
+    applyToOpportunity,
+    addExpenseRecord,
+    addFeedPurchase,
+    addFeedUse,
+    addFlockMovement,
+    addHealthIncident,
+    addProductionRecord,
+    addSaleRecord,
+    recordSalePayment,
+    recordExpensePayment,
+    addVaccinationRecord,
+    addFarmDocument,
+    archivePoultryHouse,
+    createPoultryHouse,
+    defaultFarmProfile,
+    createFlockRecord,
+    getActivityRecords,
+    getDashboardTotals,
+    getDemoDatabaseSnapshot,
+    getExpensesRecords,
+    getFarmAssets,
+    getFarmProfile,
+    getFeedPurchases,
+    getFeedInventory,
+    getFeedUseRecords,
+    getFlockRecords,
+    getFlockMovements,
+    getHealthIncidents,
+    getKycApplication,
+    getProductionRecords,
+    getOpportunityApplications,
+    getUserPreferences,
+    getFarmDocuments,
+    getPoultryHouses,
+    getSalesRecords,
+    getVaccinationRecords,
+    importDemoDatabase,
+    resetDemoDatabase,
+    saveExpensesRecords,
+    saveFarmAssets,
+    saveFarmProfile,
+    saveFeedPurchases,
+    saveFeedUseRecords,
+    saveFlockRecords,
+    saveFlockMovements,
+    saveHealthIncidents,
+    saveKycApplication,
+    saveProductionRecords,
+    savePoultryHouses,
+    saveSalesRecords,
+    updatePoultryHouse,
+    updateOpportunityApplication,
+    saveUserPreferences,
+    removeFarmDocument,
+    saveVaccinationRecords,
+} from "@/lib/simulated-data";
+
+export type { ActivityRecord, ExpenseEntry, FarmAssetRecord, FarmHouseRecord, FarmFlockMovement, FarmDocumentRecord, FeedPurchaseRecord, FeedUseRecord, FlockRecord, KycApplication, OpportunityApplicationRecord, ProductionRecord, SalesEntry, SavedFarmProfile, UserPreferences, VaccinationRecord, HealthIncidentRecord } from "@/lib/simulated-data";

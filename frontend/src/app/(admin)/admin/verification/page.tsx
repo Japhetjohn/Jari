@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Check, ClipboardCheck, MapPin, Phone, RotateCcw } from "lucide-react";
-import { getKycApplication, saveKycApplication } from "@/lib/simulated-data";
-import type { KycApplication } from "@/lib/simulated-data";
+import { getKycApplication, saveKycApplication } from "@/services";
+import type { KycApplication } from "@/services";
 
 export default function VerificationPage() {
   const [application, setApplication] = useState<KycApplication | null>(null);

@@ -1,51 +1,17 @@
-const purchases = [
-    { date: "12 Oct 2026", feedType: "Starter", brand: "Top Feed", qty: "120 bags", amount: "₦240,000" },
-    { date: "18 Oct 2026", feedType: "Finisher", brand: "Unique Feeds", qty: "90 bags", amount: "₦180,000" },
-    { date: "29 Oct 2026", feedType: "Grower", brand: "Tropical Feed", qty: "80 bags", amount: "₦120,000" },
-];
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Plus } from "lucide-react";
+import { getFeedPurchases } from "@/services";
+import type { FeedPurchaseRecord } from "@/services";
+
+const money = (value: number) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(value);
 
 export default function FeedPurchasesPage() {
-    return (
-        <div className="space-y-6">
-            <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Feed</p>
-                <h2 className="mt-2 text-3xl font-bold text-slate-900">Feed purchases</h2>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="mb-4 flex justify-end">
-                    <button className="rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
-                        Add purchase
-                    </button>
-                </div>
-
-                <div className="space-y-3">
-                    {purchases.map((purchase) => (
-                        <div key={`${purchase.date}-${purchase.feedType}`} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-5 md:items-center">
-                            <div>
-                                <p className="text-sm text-slate-500">Date</p>
-                                <p className="mt-1 font-medium text-slate-900">{purchase.date}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Feed type</p>
-                                <p className="mt-1 font-medium text-slate-900">{purchase.feedType}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Brand</p>
-                                <p className="mt-1 font-medium text-slate-900">{purchase.brand}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Quantity</p>
-                                <p className="mt-1 font-medium text-slate-900">{purchase.qty}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Amount</p>
-                                <p className="mt-1 font-medium text-slate-900">{purchase.amount}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
+  const [purchases, setPurchases] = useState<FeedPurchaseRecord[]>([]);
+  useEffect(() => { setPurchases(getFeedPurchases()); }, []);
+  return <div className="space-y-5 sm:space-y-7"><div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><Link href="/feed" className="inline-flex items-center gap-1 text-xs font-semibold text-[#547253]"><ArrowLeft size={13} /> Feed</Link><h2 className="mt-2 font-serif text-2xl font-medium text-[#20291f] sm:text-3xl">Feed purchases</h2></div><Link href="/feed/purchases/new" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#244b35] px-4 text-xs font-semibold text-white"><Plus size={14} />Add purchase</Link></div>
+    <section className="space-y-2">{purchases.map((item) => <article key={item.id} className="rounded-[1.2rem] bg-white p-4 sm:p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-sm font-semibold text-[#354237]">{item.feedType} feed - {item.brand}</h3><p className="mt-1 text-xs text-[#788174]">{item.date}{item.supplier ? ` - ${item.supplier}` : ""}</p></div><span className="text-sm font-semibold text-[#354237]">{money(item.amount)}</span></div><div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-[#687466]"><span>{item.quantity} {item.unit}{item.unit === "bags" ? ` at ${item.bagWeightKg} kg each` : ""}</span><span>Paid {money(item.amountPaid)}</span><span>Owing {money(Math.max(0, item.amount - item.amountPaid))}</span>{item.flock && <span>For {item.flock}</span>}</div></article>)}{!purchases.length && <p className="rounded-xl bg-white p-5 text-sm text-[#788174]">No feed purchases yet. Add a purchase to start tracking feed supplies.</p>}</section>
+  </div>;
 }

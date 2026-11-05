@@ -1,46 +1,9 @@
-const incidents = [
-    { date: "07 Oct 2026", flock: "Broiler Batch 02", symptoms: "Lethargy and reduced feed intake", outcome: "Monitoring" },
-    { date: "15 Oct 2026", flock: "Layer Batch 05", symptoms: "Reduced egg output", outcome: "Resolved" },
-];
-
+"use client";
+import { FormEvent, useEffect, useState } from "react";
+import { addHealthIncident, getFlockRecords, getHealthIncidents, type HealthIncidentRecord } from "@/services";
 export default function HealthIncidentsPage() {
-    return (
-        <div className="space-y-6">
-            <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Health</p>
-                <h2 className="mt-2 text-3xl font-bold text-slate-900">Health incidents</h2>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="mb-4 flex justify-end">
-                    <button className="rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
-                        Add incident
-                    </button>
-                </div>
-
-                <div className="space-y-3">
-                    {incidents.map((incident) => (
-                        <div key={`${incident.date}-${incident.flock}`} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-4 md:items-center">
-                            <div>
-                                <p className="text-sm text-slate-500">Date</p>
-                                <p className="mt-1 font-medium text-slate-900">{incident.date}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Flock</p>
-                                <p className="mt-1 font-medium text-slate-900">{incident.flock}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Symptoms</p>
-                                <p className="mt-1 font-medium text-slate-900">{incident.symptoms}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Outcome</p>
-                                <p className="mt-1 font-medium text-slate-900">{incident.outcome}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
+ const [records, setRecords] = useState<HealthIncidentRecord[]>([]); const [open, setOpen] = useState(false); const [error, setError] = useState(""); const [saved, setSaved] = useState("");
+ useEffect(() => { const sync = () => setRecords(getHealthIncidents()); sync(); window.addEventListener("jari:mock-data-changed", sync); return () => window.removeEventListener("jari:mock-data-changed", sync); }, []);
+ const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = new FormData(event.currentTarget); try { addHealthIncident({ flock: String(form.get("flock")), date: String(form.get("date")), symptoms: String(form.get("symptoms")), affectedBirds: Number(form.get("affectedBirds")), action: String(form.get("action") || "Monitoring"), outcome: String(form.get("outcome") || "Being monitored"), birdsLost: Number(form.get("birdsLost")) || 0, notes: String(form.get("notes") || "") }); setOpen(false); setError(""); setSaved("Health record saved."); } catch (issue) { setError(issue instanceof Error ? issue.message : "Could not save record."); } };
+ return <div className="space-y-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-semibold uppercase tracking-[.18em] text-emerald-700">Bird health</p><h2 className="mt-2 text-3xl font-bold text-slate-900">Health records</h2><p className="mt-2 text-sm text-slate-600">Record symptoms and the steps taken. JARI does not diagnose disease.</p></div><button onClick={() => setOpen(!open)} className="rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white">{open ? "Close form" : "Add health record"}</button></div>{saved && <p role="status" className="text-sm text-emerald-800">{saved}</p>}{open && <form onSubmit={submit} className="grid gap-4 rounded-2xl bg-white p-5 sm:grid-cols-2">{error && <p role="alert" className="sm:col-span-2 text-sm text-red-700">{error}</p>}<label className="label-text">Bird group<select required name="flock" className="input-shell">{getFlockRecords().filter((f) => f.status === "Active").map((f) => <option key={f.name}>{f.name}</option>)}</select></label><label className="label-text">Date noticed<input required name="date" type="date" className="input-shell" /></label><label className="label-text sm:col-span-2">What did you notice?<textarea required name="symptoms" className="input-shell" maxLength={500} /></label><label className="label-text">Birds affected<input required name="affectedBirds" type="number" min="1" className="input-shell" /></label><label className="label-text">Birds lost (if any)<input name="birdsLost" type="number" min="0" className="input-shell" defaultValue="0" /></label><label className="label-text">What action was taken?<input name="action" className="input-shell" placeholder="Separated birds, contacted a vet..." /></label><label className="label-text">Current outcome<input name="outcome" className="input-shell" placeholder="Being monitored" /></label><button className="min-h-11 rounded-full bg-emerald-700 text-sm font-semibold text-white sm:col-span-2">Save health record</button></form>}<section className="space-y-3">{records.slice().reverse().map((r) => <article key={r.id} className="rounded-2xl bg-white p-5"><div className="flex flex-wrap justify-between gap-2"><h3 className="font-semibold">{r.flock} · {r.date}</h3><span className="text-sm text-slate-500">{r.affectedBirds.toLocaleString()} affected</span></div><p className="mt-2 text-sm text-slate-700">{r.symptoms}</p><p className="mt-2 text-sm text-slate-500">Action: {r.action} · Outcome: {r.outcome || "Not recorded"}</p></article>)}{!records.length && <p className="rounded-2xl bg-white p-6 text-sm text-slate-500">No health records have been added yet.</p>}</section></div>;
 }

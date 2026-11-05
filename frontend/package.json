@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:workflows": "node --test scripts/simulated-data.test.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

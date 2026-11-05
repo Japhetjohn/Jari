@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { getFarmAssets, saveFarmAssets } from "@/services";
 
 const initialForm = {
     assetName: "",
@@ -12,6 +14,8 @@ const initialForm = {
 
 export default function NewAssetPage() {
     const [form, setForm] = useState(initialForm);
+    const router = useRouter();
+    const [error, setError] = useState("");
 
     const handleChange = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) => {
         setForm((previous) => ({ ...previous, [field]: value }));
@@ -24,7 +28,8 @@ export default function NewAssetPage() {
                 <h2 className="mt-2 text-3xl font-bold text-slate-900">Add farm asset</h2>
             </div>
 
-            <form className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <form onSubmit={(event) => { event.preventDefault(); if (!form.assetName.trim() || Number(form.quantity) < 1) { setError("Enter an equipment name and quantity greater than zero."); return; } saveFarmAssets([...getFarmAssets(), { name: form.assetName.trim(), quantity: Number(form.quantity), status: form.operationalCondition === "Functional" ? "Working" : "Needs repair", value: Number(form.estimatedValue) || 0, notes: `${form.ownershipStatus} equipment${form.operationalCondition === "Non-functional" ? "; non-functional" : ""}.` }]); router.push("/assets"); }} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
                 <div className="grid gap-5 md:grid-cols-2">
                     <div>
                         <label className="label-text">Asset name/type</label>

@@ -509,3 +509,35 @@ Status: Implemented; responsive browser review remains
 
 ### Validation
 - `git diff --check` only; no build, tests or browser review.
+
+## Phase 24: Persistent simulated farm workflows
+
+Status: Core workflows implemented; complete frontend acceptance checklist remains in `active.md`.
+
+### Completed
+- Added versioned browser storage with migration of legacy demo records and a shared change event for refreshing other open screens.
+- Expanded the central simulated data layer and API-shaped service facade for farm profile, poultry houses, flocks/movements, feed purchases/use, production, health, sales, expenses, assets, verification and activity.
+- Added shared validation for house capacity, flock movements, feed stock, production records and sale/expense records.
+- Connected production, sales, expenses and equipment creation forms to simulated records and updated production/sales/expense lists and totals to reflect saved data.
+- Replaced fabricated analytics metrics with saved sales, feed purchase and egg production records and responsive charts.
+- Made the reports action download a farm record snapshot.
+- Preserved the prior notification, spotlight tour, details/edit, KYC success and scrollbar improvements.
+- Rewrote `active.md` as a handoff checklist with verified completed scope, remaining workflows, validation and next tasks.
+
+### Validation
+- `npm run build` passed after the analytics, reports and health screens; all 41 routes generated. Tailwind reports an existing ambiguous custom easing class warning.
+- `git diff --check` passed (line-ending normalization notices only).
+- `npm run lint` stopped at Next.js's first-run ESLint setup prompt; the project has no ESLint config. No test runner is configured. Automated workflows and browser responsive review still need to run.
+- No backend code was changed.
+
+### Next step
+- Complete and validate health CRUD/mortality and financial payment workflows, then finish document and opportunity simulations. Follow `active.md` for the full ordered backlog.
+
+### Phase 24 follow-up
+- Replaced static vaccination and incident screens with local simulated record forms and live lists. The build validates these forms; recorded losses decrement the flock through the movement ledger.
+- Added shared, validated actions to collect a sale's remaining balance or pay an expense's remaining balance. The records and totals update immediately. Partial amounts and payment history remain on the checklist.
+- Added locally persisted opportunity tracking, farmer contact/preferences/backup settings, and shared-data admin/institution views for all current sidebar destinations.
+- Added a no-dependency workflow test command covering legacy storage migration, flock population changes, feed stock validation/updates, payment balance validation/settlement and malformed backup rejection; all five tests pass.
+- Added local farm-document uploads with stored contents/metadata, preview, download and remove actions; included documents/preferences/opportunity state in backup snapshots.
+- Added backup import confirmation and upfront section validation, plus role-correct admin/institution action links.
+- `npm run build` passed after these additions and generated all 42 routes.

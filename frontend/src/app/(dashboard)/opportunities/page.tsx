@@ -1,32 +1,15 @@
+"use client";
+import { useEffect, useState } from "react";
+import { applyToOpportunity, getOpportunityApplications, updateOpportunityApplication, type OpportunityApplicationRecord } from "@/services";
 const opportunities = [
-    { name: "Poultry Expansion Grant", type: "Grant", match: "High match" },
-    { name: "Working Capital Facility", type: "Loan", match: "Medium match" },
-    { name: "Broiler Health Insurance", type: "Insurance", match: "Medium match" },
+ { id: "opportunity-001", name: "Poultry expansion grant", type: "Grant", summary: "Support for farmers improving housing, water systems or farm equipment.", steps: "Prepare your farm profile, recent production notes and a short plan for how the support will be used." },
+ { id: "opportunity-002", name: "Working capital facility", type: "Loan", summary: "Financing to help manage feed, labour and other farm running costs.", steps: "Gather recent sales and expense records so a finance partner can understand repayment capacity." },
+ { id: "opportunity-003", name: "Poultry health cover", type: "Insurance", summary: "Explore cover options for eligible poultry operations and common farm risks.", steps: "Keep your farm profile, bird counts, vaccination and health records up to date before speaking with an insurer." },
 ];
-
 export default function OpportunitiesPage() {
-    return (
-        <div className="space-y-6">
-            <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Opportunities</p>
-                <h2 className="mt-2 text-3xl font-bold text-slate-900">Funding and insurance opportunities</h2>
-            </div>
-
-            <section className="space-y-4">
-                {opportunities.map((opportunity) => (
-                    <div key={opportunity.name} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <p className="text-lg font-semibold text-slate-900">{opportunity.name}</p>
-                                <p className="mt-1 text-sm text-slate-500">{opportunity.type}</p>
-                            </div>
-                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                                {opportunity.match}
-                            </span>
-                        </div>
-                    </div>
-                ))}
-            </section>
-        </div>
-    );
+ const [applications, setApplications] = useState<OpportunityApplicationRecord[]>([]); const [error, setError] = useState(""); const [message, setMessage] = useState("");
+ useEffect(() => { const sync = () => setApplications(getOpportunityApplications()); sync(); window.addEventListener("jari:mock-data-changed", sync); return () => window.removeEventListener("jari:mock-data-changed", sync); }, []);
+ const saveInterest = (item: typeof opportunities[number]) => { try { applyToOpportunity({ opportunityId: item.id, opportunityName: item.name, type: item.type, note: "Review eligibility and prepare the listed farm records." }); setError(""); setMessage("Saved to your applications. You can track your preparation here."); } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not save this opportunity."); } };
+ const advance = (application: OpportunityApplicationRecord) => { const status = application.status === "Interested" ? "Preparing" : "Submitted"; try { updateOpportunityApplication(application.id, status); setMessage(status === "Preparing" ? "Application checklist started." : "Marked as submitted for your own tracking. This does not send an application to a provider."); setError(""); } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not update application."); } };
+ return <div className="space-y-7"><div><p className="text-sm font-semibold uppercase tracking-[.18em] text-emerald-700">Support for your farm</p><h2 className="mt-2 text-3xl font-bold text-slate-900">Funding and insurance</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Explore common ways poultry farms may access support. These are demo opportunities; eligibility and availability must be confirmed directly with the provider.</p></div>{(error || message) && <p role={error ? "alert" : "status"} className={`rounded-xl p-4 text-sm ${error ? "bg-red-50 text-red-800" : "bg-emerald-50 text-emerald-800"}`}>{error || message}</p>}<section className="grid gap-4 lg:grid-cols-3">{opportunities.map((item) => { const saved = applications.find((app) => app.opportunityId === item.id); return <article key={item.id} className="flex flex-col rounded-2xl bg-white p-5"><span className="w-fit rounded-full bg-[#edf2e8] px-3 py-1 text-xs font-semibold text-[#4d704c]">{item.type}</span><h3 className="mt-4 text-xl font-semibold text-slate-900">{item.name}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{item.summary}</p><div className="mt-4 rounded-xl bg-[#f5f7f2] p-4"><p className="text-xs font-semibold text-slate-800">What to prepare</p><p className="mt-1 text-xs leading-5 text-slate-600">{item.steps}</p></div>{saved ? <div className="mt-4 flex items-center justify-between gap-2"><span className="text-xs font-semibold text-emerald-800">{saved.status}</span>{saved.status !== "Submitted" && <button type="button" onClick={() => advance(saved)} className="rounded-full bg-[#244b35] px-4 py-2 text-xs font-semibold text-white">{saved.status === "Interested" ? "Start checklist" : "Mark submitted"}</button>}</div> : <button type="button" onClick={() => saveInterest(item)} className="mt-auto pt-5 text-left text-sm font-semibold text-emerald-800 hover:text-emerald-950">Save opportunity →</button>}</article>; })}</section>{applications.length > 0 && <section className="rounded-2xl bg-[#eaf0e5] p-5"><h3 className="text-lg font-semibold text-slate-900">Your saved opportunities</h3><p className="mt-1 text-sm text-slate-600">Track your own next step. JARI has not sent these applications to a provider.</p><div className="mt-4 space-y-2">{applications.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4"><span className="text-sm font-medium">{item.opportunityName}</span><span className="text-xs font-semibold text-emerald-800">{item.status}</span></div>)}</div></section>}</div>;
 }

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { ArrowUpRight, Check, Pencil, Tractor, X } from "lucide-react";
-import { getFarmAssets, saveFarmAssets } from "@/lib/simulated-data";
-import type { FarmAssetRecord } from "@/lib/simulated-data";
+import { getFarmAssets, saveFarmAssets } from "@/services";
+import type { FarmAssetRecord } from "@/services";
 
 const money = (value: number) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(value) || 0);
 

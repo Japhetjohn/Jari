@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { getPoultryHouses, savePoultryHouses } from "@/lib/simulated-data";
+import { createPoultryHouse } from "@/services";
 
 const initialForm = {
     houseName: "",
@@ -16,6 +16,7 @@ const initialForm = {
 export default function NewPoultryHousePage() {
     const router = useRouter();
     const [form, setForm] = useState(initialForm);
+    const [error, setError] = useState("");
 
     const handleChange = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) => {
         setForm((previous) => ({ ...previous, [field]: value }));
@@ -23,16 +24,13 @@ export default function NewPoultryHousePage() {
 
     const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const houses = getPoultryHouses();
-        const nextHouse = {
-            name: form.houseName || `House ${houses.length + 1}`,
-            system: form.housingSystem,
-            capacity: Number(form.maximumCapacity) || 0,
-            water: form.waterSource,
-            feedStorage: form.feedStorage,
-        };
-        savePoultryHouses([...houses, nextHouse]);
-        router.push("/poultry-houses");
+        setError("");
+        try {
+            createPoultryHouse({ name: form.houseName, system: form.housingSystem, capacity: Number(form.maximumCapacity), water: form.waterSource, feedStorage: form.feedStorage, ventilation: form.ventilation });
+            router.push("/poultry-houses");
+        } catch (saveError) {
+            setError(saveError instanceof Error ? saveError.message : "We could not save this farm house.");
+        }
     };
 
     return (
@@ -48,6 +46,7 @@ export default function NewPoultryHousePage() {
                         <label className="label-text">House name or reference</label>
                         <input
                             className="input-shell"
+                            required
                             value={form.houseName}
                             onChange={(event) => handleChange("houseName", event.target.value)}
                             placeholder="House A"
@@ -72,7 +71,8 @@ export default function NewPoultryHousePage() {
                         <label className="label-text">Maximum bird capacity</label>
                         <input
                             type="number"
-                            min={0}
+                            min={1}
+                            required
                             className="input-shell"
                             value={form.maximumCapacity}
                             onChange={(event) => handleChange("maximumCapacity", event.target.value)}
@@ -121,6 +121,7 @@ export default function NewPoultryHousePage() {
                     </div>
                 </div>
 
+                {error && <p role="alert" className="mt-4 rounded-xl bg-[#fbefeb] px-4 py-3 text-sm text-[#9a493c]">{error}</p>}
                 <div className="mt-8 flex justify-end">
                     <button
                         type="submit"

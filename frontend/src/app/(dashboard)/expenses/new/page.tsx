@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { addExpenseRecord } from "@/services";
 
 const initialForm = {
     flock: "Broiler Batch 02",
@@ -13,6 +15,8 @@ const initialForm = {
 
 export default function NewExpensePage() {
     const [form, setForm] = useState(initialForm);
+    const router = useRouter();
+    const [error, setError] = useState("");
 
     const handleChange = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) => {
         setForm((previous) => ({ ...previous, [field]: value }));
@@ -25,7 +29,8 @@ export default function NewExpensePage() {
                 <h2 className="mt-2 text-3xl font-bold text-slate-900">Add operating expense</h2>
             </div>
 
-            <form className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <form onSubmit={(event) => { event.preventDefault(); try { addExpenseRecord({ date: form.expenseDate, category: form.category, amount: Number(form.amount) || 0, amountPaid: Number(form.amountPaid) || 0, flock: form.flock }); router.push("/expenses"); } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not save this expense."); } }} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
                 <div className="grid gap-5 md:grid-cols-2">
                     <div>
                         <label className="label-text">Flock</label>
@@ -92,17 +97,7 @@ export default function NewExpensePage() {
                         />
                     </div>
 
-                    <div>
-                        <label className="label-text">Outstanding balance</label>
-                        <input
-                            type="number"
-                            min={0}
-                            className="input-shell"
-                            value={form.outstanding}
-                            onChange={(event) => handleChange("outstanding", event.target.value)}
-                            placeholder="0.00"
-                        />
-                    </div>
+                    <p className="self-end text-sm text-slate-600">Balance remaining: ₦{Math.max(0, Number(form.amount || 0) - Number(form.amountPaid || 0)).toLocaleString()}</p>
                 </div>
 
                 <div className="mt-8 flex justify-end">

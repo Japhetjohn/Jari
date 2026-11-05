@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { getFlockRecords, saveFlockRecords } from "@/lib/simulated-data";
+import { useEffect, useState } from "react";
+import { createFlockRecord, getPoultryHouses } from "@/services";
+import type { FarmHouseRecord } from "@/services";
 
 const initialForm = {
     flockName: "",
@@ -21,6 +22,10 @@ const initialForm = {
 export default function NewBirdsPage() {
     const router = useRouter();
     const [form, setForm] = useState(initialForm);
+    const [houses, setHouses] = useState<FarmHouseRecord[]>([]);
+    const [error, setError] = useState("");
+
+    useEffect(() => { setHouses(getPoultryHouses()); }, []);
 
     const handleChange = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) => {
         setForm((previous) => ({ ...previous, [field]: value }));
@@ -28,20 +33,25 @@ export default function NewBirdsPage() {
 
     const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const flocks = getFlockRecords();
-        const nextFlock = {
-            name: form.flockName || `Flock ${flocks.length + 1}`,
-            type: form.poultryType,
-            breed: form.breed || "Unknown",
-            house: form.house,
-            birds: Number(form.initialBirds) || 0,
-            status: "Active",
-            acquisitionDate: form.acquisitionDate,
-            cycleStart: form.cycleStart,
-        };
-
-        saveFlockRecords([...flocks, nextFlock]);
-        router.push("/birds");
+        setError("");
+        try {
+            createFlockRecord({
+                name: form.flockName,
+                type: form.poultryType,
+                breed: form.breed,
+                house: form.house,
+                birds: Number(form.initialBirds),
+                acquisitionDate: form.acquisitionDate,
+                cycleStart: form.cycleStart || form.acquisitionDate,
+                source: form.source,
+                ageAtAcquisition: Number(form.ageAtAcquisition) || undefined,
+                ageUnit: form.ageUnit,
+                purchaseCost: Number(form.purchaseCost) || 0,
+            });
+            router.push("/birds");
+        } catch (saveError) {
+            setError(saveError instanceof Error ? saveError.message : "We could not save this bird group.");
+        }
     };
 
     return (
@@ -57,6 +67,7 @@ export default function NewBirdsPage() {
                         <label className="label-text">Flock reference/name</label>
                         <input
                             className="input-shell"
+                            required
                             value={form.flockName}
                             onChange={(event) => handleChange("flockName", event.target.value)}
                             placeholder="Broiler Batch 03"
@@ -67,6 +78,7 @@ export default function NewBirdsPage() {
                         <label className="label-text">Poultry type</label>
                         <select
                             className="input-shell"
+                            required
                             value={form.poultryType}
                             onChange={(event) => handleChange("poultryType", event.target.value)}
                         >
@@ -93,9 +105,7 @@ export default function NewBirdsPage() {
                             value={form.house}
                             onChange={(event) => handleChange("house", event.target.value)}
                         >
-                            <option>House A</option>
-                            <option>House B</option>
-                            <option>House C</option>
+                            {houses.map((house) => <option key={house.name}>{house.name}</option>)}
                         </select>
                     </div>
 
@@ -104,6 +114,7 @@ export default function NewBirdsPage() {
                         <input
                             type="date"
                             className="input-shell"
+                            required
                             value={form.acquisitionDate}
                             onChange={(event) => handleChange("acquisitionDate", event.target.value)}
                         />
@@ -123,7 +134,8 @@ export default function NewBirdsPage() {
                         <label className="label-text">Initial number of birds</label>
                         <input
                             type="number"
-                            min={0}
+                            min={1}
+                            required
                             className="input-shell"
                             value={form.initialBirds}
                             onChange={(event) => handleChange("initialBirds", event.target.value)}
@@ -176,6 +188,7 @@ export default function NewBirdsPage() {
                     </div>
                 </div>
 
+                {error && <p role="alert" className="mt-4 rounded-xl bg-[#fbefeb] px-4 py-3 text-sm text-[#9a493c]">{error}</p>}
                 <div className="mt-8 flex justify-end">
                     <button
                         type="submit"

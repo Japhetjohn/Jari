@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { addProductionRecord, getFlockRecords } from "@/services";
 
 const initialForm = {
     flock: "Broiler Batch 02",
@@ -17,6 +19,8 @@ const initialForm = {
 
 export default function NewProductionPage() {
     const [form, setForm] = useState(initialForm);
+    const router = useRouter();
+    const [error, setError] = useState("");
 
     const handleChange = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) => {
         setForm((previous) => ({ ...previous, [field]: value }));
@@ -29,7 +33,8 @@ export default function NewProductionPage() {
                 <h2 className="mt-2 text-3xl font-bold text-slate-900">Add production record</h2>
             </div>
 
-            <form className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <form onSubmit={(event) => { event.preventDefault(); try { addProductionRecord({ flock: form.flock, date: form.recordDate, type: form.productionType, liveBirds: Number(form.liveBirds) || 0, eggsCollected: Number(form.eggsCollected) || 0, goodEggs: Number(form.goodEggs) || 0, damagedEggs: Number(form.damagedEggs) || 0, birdsWeighed: Number(form.birdsWeighed) || 0, averageWeight: Number(form.averageWeight) || 0, birdsReady: Number(form.birdsReady) || 0 }); router.push("/production"); } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not save this record."); } }} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
                 <div className="grid gap-5 md:grid-cols-2">
                     <div>
                         <label className="label-text">Flock</label>
@@ -38,9 +43,7 @@ export default function NewProductionPage() {
                             value={form.flock}
                             onChange={(event) => handleChange("flock", event.target.value)}
                         >
-                            <option>Broiler Batch 02</option>
-                            <option>Layer Batch 05</option>
-                            <option>Breeder Batch 01</option>
+                            {getFlockRecords().filter((flock) => flock.status === "Active").map((flock) => <option key={flock.name}>{flock.name}</option>)}
                         </select>
                     </div>
 
@@ -51,9 +54,7 @@ export default function NewProductionPage() {
                             value={form.productionType}
                             onChange={(event) => handleChange("productionType", event.target.value)}
                         >
-                            <option>Broiler</option>
-                            <option>Layer</option>
-                            <option>Breeder</option>
+                            <option>Broiler</option><option>Layer</option><option>Breeder</option>
                         </select>
                     </div>
 

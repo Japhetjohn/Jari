@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import { CheckCircle2, Clock3, ClipboardCheck, MapPin } from "lucide-react";
-import { defaultFarmProfile, getFarmProfile, getKycApplication, saveKycApplication } from "@/lib/simulated-data";
-import type { KycApplication } from "@/lib/simulated-data";
+import { defaultFarmProfile, getFarmProfile, getKycApplication, saveKycApplication } from "@/services";
+import type { KycApplication } from "@/services";
 
 export default function KycPage() {
   const [farmName, setFarmName] = useState("");
@@ -36,6 +36,10 @@ export default function KycPage() {
   const statusText = application?.status === "approved" ? "Farm verified" : application?.status === "needs_changes" ? "More details needed" : application?.status === "pending" ? "Waiting for JARI review" : "Not sent yet";
   const statusIcon = application?.status === "approved" ? CheckCircle2 : Clock3;
   const StatusIcon = statusIcon;
+  // Keep these checks outside the conditional form branch. That branch only
+  // renders for new/needs-changes applications, where pending is narrowed out.
+  const requestDisabled = application?.status === "pending" || application?.status === "approved";
+  const requestButtonLabel = application?.status === "pending" ? "Request sent" : application?.status === "approved" ? "Farm verified" : "Send review request";
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 sm:space-y-7">
@@ -56,7 +60,7 @@ export default function KycPage() {
           <label className="label-text sm:col-span-2">Farm location<input required minLength={3} maxLength={180} autoComplete="street-address" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Community, local government, state" /></label>
           <label className="label-text sm:col-span-2">Phone number<input required type="tel" inputMode="tel" autoComplete="tel" minLength={7} maxLength={24} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="A number we can reach you on" /></label>
         </div>
-        <div className="mt-5 flex flex-col justify-between gap-3 rounded-xl bg-[#f5f6f2] p-4 sm:flex-row sm:items-center"><p className="flex items-start gap-2 text-xs leading-5 text-[#717b6e]"><MapPin size={15} className="mt-0.5 shrink-0 text-[#688363]" />A JARI team member may contact you to arrange a farm visit.</p><button type="submit" disabled={application?.status === "pending" || application?.status === "approved"} className="min-h-11 shrink-0 rounded-full bg-[#244b35] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#193d2b] disabled:cursor-not-allowed disabled:opacity-50">{application?.status === "pending" ? "Request sent" : application?.status === "approved" ? "Farm verified" : "Send review request"}</button></div>
+        <div className="mt-5 flex flex-col justify-between gap-3 rounded-xl bg-[#f5f6f2] p-4 sm:flex-row sm:items-center"><p className="flex items-start gap-2 text-xs leading-5 text-[#717b6e]"><MapPin size={15} className="mt-0.5 shrink-0 text-[#688363]" />A JARI team member may contact you to arrange a farm visit.</p><button type="submit" disabled={requestDisabled} className="min-h-11 shrink-0 rounded-full bg-[#244b35] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#193d2b] disabled:cursor-not-allowed disabled:opacity-50">{requestButtonLabel}</button></div>
       </form></>}
       <p className="text-center text-[10px] leading-5 text-[#92998e]">This request is for a JARI farm review. It does not guarantee insurance or financing.</p>
     </div>

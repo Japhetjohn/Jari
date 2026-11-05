@@ -1,76 +1,14 @@
-const cards = [
-    { label: "Feed efficiency", value: "1.48" },
-    { label: "Revenue growth", value: "+18%" },
-    { label: "Mortality trend", value: "-2.1%" },
-    { label: "Data confidence", value: "82%" },
-];
-
-const revenue = [
-    { month: "Jan", value: 120 },
-    { month: "Feb", value: 140 },
-    { month: "Mar", value: 135 },
-    { month: "Apr", value: 170 },
-    { month: "May", value: 210 },
-    { month: "Jun", value: 240 },
-];
-
-const feed = [
-    { month: "Jan", value: 70 },
-    { month: "Feb", value: 82 },
-    { month: "Mar", value: 79 },
-    { month: "Apr", value: 88 },
-    { month: "May", value: 95 },
-    { month: "Jun", value: 102 },
-];
-
+"use client";
+import { useEffect, useMemo, useState } from "react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { getFeedPurchases, getProductionRecords, getSalesRecords, type FeedPurchaseRecord, type ProductionRecord, type SalesEntry } from "@/services";
+const monthLabel = (date: string) => { const parsed = new Date(date); return Number.isNaN(parsed.getTime()) ? date : parsed.toLocaleString("en", { month: "short" }); };
+const amount = (value: number | string) => Number(String(value).replace(/[^\d.-]/g, "")) || 0;
 export default function AnalyticsPage() {
-    return (
-        <div className="space-y-6">
-            <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Analytics</p>
-                <h2 className="mt-2 text-3xl font-bold text-slate-900">Farm performance dashboard</h2>
-            </div>
-
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {cards.map((card) => (
-                    <div key={card.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <p className="text-sm text-slate-500">{card.label}</p>
-                        <p className="mt-3 text-2xl font-bold text-slate-900">{card.value}</p>
-                    </div>
-                ))}
-            </section>
-
-            <section className="grid gap-6 xl:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <h3 className="text-lg font-semibold text-slate-900">Revenue trend</h3>
-                    <div className="mt-4 flex h-48 items-end gap-3">
-                        {revenue.map((item) => (
-                            <div key={item.month} className="flex flex-1 flex-col items-center gap-2">
-                                <div
-                                    className="w-full rounded-t-xl bg-emerald-500"
-                                    style={{ height: `${item.value}%` }}
-                                />
-                                <span className="text-xs text-slate-500">{item.month}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <h3 className="text-lg font-semibold text-slate-900">Feed cost trend</h3>
-                    <div className="mt-4 flex h-48 items-end gap-3">
-                        {feed.map((item) => (
-                            <div key={item.month} className="flex flex-1 flex-col items-center gap-2">
-                                <div
-                                    className="w-full rounded-t-xl bg-amber-400"
-                                    style={{ height: `${item.value}%` }}
-                                />
-                                <span className="text-xs text-slate-500">{item.month}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-        </div>
-    );
+ const [sales, setSales] = useState<SalesEntry[]>([]); const [purchases, setPurchases] = useState<FeedPurchaseRecord[]>([]); const [production, setProduction] = useState<ProductionRecord[]>([]);
+ useEffect(() => { const sync = () => { setSales(getSalesRecords()); setPurchases(getFeedPurchases()); setProduction(getProductionRecords()); }; sync(); window.addEventListener("jari:mock-data-changed", sync); return () => window.removeEventListener("jari:mock-data-changed", sync); }, []);
+ const chartData = useMemo(() => { const months = new Map<string, { month: string; sales: number; feed: number; eggs: number }>(); const get = (date: string) => { const key = monthLabel(date); if (!months.has(key)) months.set(key, { month: key, sales: 0, feed: 0, eggs: 0 }); return months.get(key)!; }; sales.forEach((row) => { if (row.date) get(row.date).sales += amount(row.amount); }); purchases.forEach((row) => { if (row.date) get(row.date).feed += row.amount; }); production.forEach((row) => { if (row.date) get(row.date).eggs += row.eggsCollected; }); return Array.from(months.values()).slice(-8); }, [sales, purchases, production]);
+ const totalSales = sales.reduce((sum, row) => sum + amount(row.amount), 0); const totalFeed = purchases.reduce((sum, row) => sum + row.amount, 0); const totalEggs = production.reduce((sum, row) => sum + row.eggsCollected, 0);
+ return <div className="space-y-6"><div><p className="text-sm font-semibold uppercase tracking-[.18em] text-emerald-700">Farm insights</p><h2 className="mt-2 text-3xl font-bold text-slate-900">Your farm at a glance</h2><p className="mt-2 text-sm text-slate-500">Charts update from the records you enter. They are not forecasts.</p></div><section className="grid gap-4 sm:grid-cols-3">{[{ label: "Recorded sales", value: `₦${totalSales.toLocaleString()}` }, { label: "Feed purchases", value: `₦${totalFeed.toLocaleString()}` }, { label: "Eggs collected", value: totalEggs.toLocaleString() }].map((item) => <div key={item.label} className="rounded-2xl bg-white p-5"><p className="text-sm text-slate-500">{item.label}</p><p className="mt-3 text-2xl font-semibold text-slate-900">{item.value}</p></div>)}</section><section className="grid gap-5 xl:grid-cols-2"><Chart title="Sales and feed by month" data={chartData} bars={[{ key: "sales", fill: "#278255" }, { key: "feed", fill: "#d9a53d" }]} /><Chart title="Eggs collected by month" data={chartData} bars={[{ key: "eggs", fill: "#6f8e64" }]} /></section>{!chartData.length && <p className="rounded-2xl bg-white p-6 text-sm text-slate-500">Add farm records to see your charts.</p>}</div>;
 }
+function Chart({ title, data, bars }: { title: string; data: Array<Record<string, string | number>>; bars: Array<{ key: string; fill: string }> }) { return <section className="rounded-2xl bg-white p-5"><h3 className="font-semibold text-slate-900">{title}</h3><div className="mt-4 h-64 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={data} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="month" /><YAxis width={70} /><Tooltip /><>{bars.map((bar) => <Bar key={bar.key} dataKey={bar.key} fill={bar.fill} radius={[5, 5, 0, 0]} />)}</></BarChart></ResponsiveContainer></div></section>; }

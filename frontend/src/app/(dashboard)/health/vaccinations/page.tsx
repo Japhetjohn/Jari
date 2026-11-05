@@ -1,47 +1,9 @@
-const records = [
-    { vaccine: "Newcastle disease vaccine", date: "12 Oct 2026", coverage: "1,200 birds", status: "Administered" },
-    { vaccine: "Infectious bronchitis", date: "21 Oct 2026", coverage: "1,450 birds", status: "Scheduled" },
-    { vaccine: "Gumboro vaccine", date: "03 Nov 2026", coverage: "1,360 birds", status: "Due" },
-];
-
+"use client";
+import { FormEvent, useEffect, useState } from "react";
+import { getFlockRecords, getVaccinationRecords, addVaccinationRecord, type VaccinationRecord } from "@/services";
 export default function VaccinationsPage() {
-    return (
-        <div className="space-y-6">
-            <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Health</p>
-                <h2 className="mt-2 text-3xl font-bold text-slate-900">Vaccination records</h2>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="mb-4 flex justify-end">
-                    <button className="rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
-                        Add vaccination
-                    </button>
-                </div>
-
-                <div className="space-y-3">
-                    {records.map((record) => (
-                        <div key={`${record.vaccine}-${record.date}`} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-4 md:items-center">
-                            <div>
-                                <p className="text-sm text-slate-500">Vaccine</p>
-                                <p className="mt-1 font-medium text-slate-900">{record.vaccine}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Date</p>
-                                <p className="mt-1 font-medium text-slate-900">{record.date}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Coverage</p>
-                                <p className="mt-1 font-medium text-slate-900">{record.coverage}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Status</p>
-                                <p className="mt-1 font-medium text-slate-900">{record.status}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
+ const [records, setRecords] = useState<VaccinationRecord[]>([]); const [open, setOpen] = useState(false); const [error, setError] = useState(""); const [saved, setSaved] = useState("");
+ useEffect(() => { const sync = () => setRecords(getVaccinationRecords()); sync(); window.addEventListener("jari:mock-data-changed", sync); return () => window.removeEventListener("jari:mock-data-changed", sync); }, []);
+ const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = new FormData(event.currentTarget); try { addVaccinationRecord({ flock: String(form.get("flock")), vaccine: String(form.get("vaccine")), date: String(form.get("date")), birds: Number(form.get("birds")), nextDate: String(form.get("nextDate") || ""), givenBy: String(form.get("givenBy") || ""), notes: String(form.get("notes") || "") }); setOpen(false); setError(""); setSaved("Vaccination record saved."); } catch (issue) { setError(issue instanceof Error ? issue.message : "Could not save record."); } };
+ return <div className="space-y-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-semibold uppercase tracking-[.18em] text-emerald-700">Bird health</p><h2 className="mt-2 text-3xl font-bold text-slate-900">Vaccination records</h2><p className="mt-2 text-sm text-slate-600">Keep a record of vaccines given to each bird group.</p></div><button onClick={() => setOpen(!open)} className="rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white">{open ? "Close form" : "Add vaccination"}</button></div>{saved && <p role="status" className="text-sm text-emerald-800">{saved}</p>}{open && <form onSubmit={submit} className="grid gap-4 rounded-2xl bg-white p-5 sm:grid-cols-2">{error && <p role="alert" className="sm:col-span-2 text-sm text-red-700">{error}</p>}<label className="label-text">Bird group<select required name="flock" className="input-shell">{getFlockRecords().filter((f) => f.status === "Active").map((f) => <option key={f.name}>{f.name}</option>)}</select></label><label className="label-text">Vaccine<input required name="vaccine" className="input-shell" placeholder="e.g. Newcastle disease" /></label><label className="label-text">Date given<input required name="date" type="date" className="input-shell" /></label><label className="label-text">Birds covered<input required name="birds" type="number" min="1" className="input-shell" /></label><label className="label-text">Next due date<input name="nextDate" type="date" className="input-shell" /></label><label className="label-text">Given by<input name="givenBy" className="input-shell" placeholder="Name or role" /></label><button className="min-h-11 rounded-full bg-emerald-700 text-sm font-semibold text-white sm:col-span-2">Save vaccination</button></form>}<section className="space-y-3">{records.slice().reverse().map((r) => <article key={r.id} className="grid gap-3 rounded-2xl bg-white p-4 sm:grid-cols-4"><div><p className="text-xs text-slate-500">Vaccine</p><p className="mt-1 font-medium">{r.vaccine}</p></div><div><p className="text-xs text-slate-500">Bird group</p><p className="mt-1 font-medium">{r.flock}</p></div><div><p className="text-xs text-slate-500">Date</p><p className="mt-1 font-medium">{r.date}</p></div><div><p className="text-xs text-slate-500">Coverage</p><p className="mt-1 font-medium">{r.birds.toLocaleString()} birds</p></div></article>)}{!records.length && <p className="rounded-2xl bg-white p-6 text-sm text-slate-500">No vaccinations have been recorded yet.</p>}</section></div>;
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { addSaleRecord, getFlockRecords } from "@/services";
 
 const initialForm = {
     flock: "Broiler Batch 02",
@@ -15,6 +17,8 @@ const initialForm = {
 
 export default function NewSalePage() {
     const [form, setForm] = useState(initialForm);
+    const router = useRouter();
+    const [error, setError] = useState("");
 
     const handleChange = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) => {
         setForm((previous) => ({ ...previous, [field]: value }));
@@ -27,7 +31,8 @@ export default function NewSalePage() {
                 <h2 className="mt-2 text-3xl font-bold text-slate-900">Record a sale</h2>
             </div>
 
-            <form className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <form onSubmit={(event) => { event.preventDefault(); try { addSaleRecord({ date: form.salesDate, product: form.product, quantity: Number(form.quantity) || 0, unit: form.unitMeasurement, amount: Number(form.totalAmount) || (Number(form.quantity) * Number(form.unitPrice)), amountReceived: Number(form.amountReceived) || 0, flock: form.flock }); router.push("/sales"); } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not save this sale."); } }} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
                 <div className="grid gap-5 md:grid-cols-2">
                     <div>
                         <label className="label-text">Flock</label>
@@ -36,9 +41,7 @@ export default function NewSalePage() {
                             value={form.flock}
                             onChange={(event) => handleChange("flock", event.target.value)}
                         >
-                            <option>Broiler Batch 02</option>
-                            <option>Layer Batch 05</option>
-                            <option>Breeder Batch 01</option>
+                            {getFlockRecords().filter((flock) => flock.status === "Active").map((flock) => <option key={flock.name}>{flock.name}</option>)}
                         </select>
                     </div>
 
