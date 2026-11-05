@@ -169,7 +169,7 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-40 -mx-3 -mt-3 bg-[#f7f7f2]/95 px-4 pb-3 pt-3 backdrop-blur-md sm:-mx-6 sm:-mt-6 sm:px-8 lg:-mx-8 lg:-mt-6 lg:mb-4 lg:px-8 lg:py-4">
+          <header className="sticky top-0 z-40 -mx-3 -mt-3 bg-[#eef1e8]/95 px-4 pb-3 pt-3 backdrop-blur-md sm:-mx-6 sm:-mt-6 sm:px-8 lg:-mx-8 lg:-mt-6 lg:mb-4 lg:px-8 lg:py-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3 lg:block"><Link href={homePath} aria-label="JARI home" className="lg:hidden"><JariLogo size={23} /></Link><div className="hidden min-w-0 lg:block"><p className="text-[10px] font-bold uppercase tracking-[.15em] text-[#71806f]">{eyebrow}</p><h1 className="mt-0.5 truncate font-serif text-2xl tracking-tight">{workspace}</h1></div></div>
               <div className="flex shrink-0 items-center gap-2 sm:gap-3">

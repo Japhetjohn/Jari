@@ -11,8 +11,8 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   const showAccountTabs = pathname === "/login" || pathname === "/register";
 
   return (
-    <main className="auth-page min-h-screen bg-[#f5f6f0] px-3 py-3 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-      <div className="mx-auto grid min-h-[calc(100svh-1.5rem)] max-w-6xl overflow-hidden rounded-[1.75rem] bg-white shadow-[0_28px_80px_-48px_rgba(27,53,34,.32)] sm:min-h-[calc(100svh-3rem)] lg:min-h-[min(760px,calc(100svh-4rem))] lg:grid-cols-[1fr_.92fr]">
+    <main className="auth-page flex min-h-screen flex-col items-center bg-[#f5f6f0] px-3 py-3 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+      <div className="my-auto grid w-full min-h-[calc(100svh-1.5rem)] max-w-6xl overflow-hidden rounded-[1.75rem] bg-white shadow-[0_28px_80px_-48px_rgba(27,53,34,.32)] sm:min-h-[calc(100svh-3rem)] lg:min-h-[min(760px,calc(100svh-4rem))] lg:grid-cols-[1fr_.92fr]">
         <section className="auth-story relative hidden min-h-[680px] flex-col justify-between overflow-hidden p-9 text-white lg:flex xl:p-12">
           <Image src="/images/nigerian-poultry-house.jpg" alt="Poultry flock inside a farm in Nigeria" fill priority sizes="(max-width: 1280px) 48vw, 560px" className="absolute inset-0 object-cover object-[center_62%]" />
           <div className="auth-story-shade absolute inset-0" />
