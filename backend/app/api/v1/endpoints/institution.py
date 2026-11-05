@@ -171,7 +171,7 @@ def create_assessment(
     description="Retrieve all historical underwriting and risk assessments saved by this institution."
 )
 def list_assessments(
-    farm_id: Optional[uuid.UUID] = Query(None),
+    farm_id: Optional[str] = Query(None),
     current_user: User = Depends(require_role(UserRole.INSTITUTIONAL_USER, UserRole.ADMIN)),
     db: Session = Depends(get_db)
 ):
@@ -179,5 +179,12 @@ def list_assessments(
     if not profile:
         return []
 
-    return RiskAssessmentService.list_assessments(db, institution_id=profile.id, farm_id=farm_id)
+    parsed_farm_id = None
+    if farm_id and farm_id.strip() and farm_id != "undefined" and farm_id != "null":
+        try:
+            parsed_farm_id = uuid.UUID(farm_id.strip())
+        except ValueError:
+            parsed_farm_id = None
+
+    return RiskAssessmentService.list_assessments(db, institution_id=profile.id, farm_id=parsed_farm_id)
 

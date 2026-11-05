@@ -272,9 +272,27 @@ export function backendToDocument(b: any): FarmDocumentRecord {
 
 let isSyncing = false;
 
+const SESSION_STORAGE_KEY = "jari-simulated-session";
+
+function getCurrentRole(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    const session = JSON.parse(raw);
+    return session?.role || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function syncAllFromBackend(): Promise<void> {
   const token = getStoredToken();
   if (!token || isSyncing) return;
+
+  // Only run farmer farm sync if current authenticated user is a farmer
+  const role = getCurrentRole();
+  if (role && role !== "farmer") return;
 
   isSyncing = true;
   try {

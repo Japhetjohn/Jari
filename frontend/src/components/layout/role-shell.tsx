@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Bell, ChevronDown, Menu, X } from "lucide-react";
-import { getSavedSession, logoutSimulation, restoreSession } from "@/lib/auth";
+import { getSavedSession, logoutSimulation, restoreSession, type ActiveSession } from "@/lib/auth";
 import { JariLogo } from "@/components/brand/jari-logo";
 import { DashboardTour } from "@/components/layout/dashboard-tour";
 import { getFarmNotifications, type FarmNotification } from "@/lib/notifications";
@@ -74,7 +74,8 @@ function WorkspaceNavigation({
 export function RoleShell({ children, workspace, eyebrow, navigation, allowedRoles }: RoleShellProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [session, setSession] = useState(getSavedSession());
+  const [mounted, setMounted] = useState(false);
+  const [session, setSession] = useState<ActiveSession | null>(null);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [drawerMounted, setDrawerMounted] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -86,7 +87,8 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
   const homePath = session ? homeForRole(session.role) : "/dashboard";
 
   useEffect(() => {
-    let mounted = true;
+    let active = true;
+    setMounted(true);
     const currentSession = getSavedSession();
     if (!currentSession) {
       router.replace("/login");
@@ -100,7 +102,7 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
 
     // Verify session against real backend if token exists
     restoreSession().then((verified) => {
-      if (!mounted) return;
+      if (!active) return;
       if (!verified) {
         router.replace("/login");
       } else {
@@ -114,7 +116,7 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
     window.addEventListener("jari:auth-expired", handleAuthExpired);
 
     return () => {
-      mounted = false;
+      active = false;
       window.removeEventListener("jari:auth-expired", handleAuthExpired);
     };
   }, [allowedRoles, router]);
@@ -184,7 +186,7 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
     };
   }, [mobileNavigationOpen]);
 
-  if (!session || !allowedRoles.includes(session.role)) return null;
+  if (!mounted || !session || !allowedRoles.includes(session.role)) return null;
 
   const signOut = () => {
     logoutSimulation();
