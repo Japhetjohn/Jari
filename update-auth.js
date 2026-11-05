@@ -90,3 +90,4 @@ code = code.replace(
 
 fs.writeFileSync(path, code, 'utf8');
 console.log('Successfully updated auth.ts with live backend enforcement');
+

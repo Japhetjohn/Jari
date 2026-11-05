@@ -8,6 +8,7 @@ import { loginWithBackend } from "@/lib/auth";
 
 const demoAccounts = [
   { label: "Farmer", phone: "08030000000", password: "password123" },
+  { label: "Admin", phone: "08040000000", password: "admin123" },
   { label: "Institution", phone: "08060000000", password: "institution123" },
 ];
 
@@ -34,8 +35,8 @@ export default function LoginPage() {
         session.role === "admin" || session.role === "verification_agent"
           ? "/admin"
           : session.role === "institutional_user"
-          ? "/institution"
-          : "/dashboard";
+            ? "/institution"
+            : "/dashboard";
       router.push(target);
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Login failed.");
@@ -55,7 +56,7 @@ export default function LoginPage() {
       <div className="mb-5 rounded-xl bg-[#eef3eb] p-3.5 text-xs leading-5 text-[#456346]">
         <p className="font-semibold">Choose a demo workspace</p>
         <p className="mt-1">Pre-filled demo credentials for quick access.</p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="mt-3 grid grid-cols-3 gap-2">
           {demoAccounts.map((account) => (
             <button
               key={account.label}

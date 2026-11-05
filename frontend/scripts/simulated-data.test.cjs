@@ -53,16 +53,50 @@ vm.runInNewContext(authOutput, {
   exports: authModule.exports,
   module: authModule,
   window: windowMock,
+  CustomEvent: CustomEventMock,
   console,
   require: (name) => {
     if (name === "@/lib/simulated-data") return data;
     if (name === "@/lib/api-client") return apiClientMock;
+    if (name === "@/lib/backend-sync") return { syncAllFromBackend: async () => {} };
     throw new Error(`Unexpected module ${name}`);
   }
 }, { filename: "auth.js" });
 const auth = authModule.exports;
 
-beforeEach(() => { local.clear(); events.length = 0; failNextSetFor = null; });
+beforeEach(() => {
+  local.clear();
+  events.length = 0;
+  failNextSetFor = null;
+  local.set("jari-demo:v1:jari-simulated-flocks", JSON.stringify([
+    { name: "Broiler Batch 02", type: "Broiler", house: "House A", birds: 1400, status: "Active", breed: "Ross 308" },
+    { name: "Layer Batch 05", type: "Layer", house: "House B", birds: 1600, status: "Active", breed: "Isa Brown" },
+    { name: "Breeder Batch 01", type: "Breeder", house: "House C", birds: 520, status: "Completed", breed: "Cobb 500" },
+  ]));
+  local.set("jari-demo:v1:jari-simulated-houses", JSON.stringify([
+    { name: "House A", system: "Deep litter", capacity: 1200, water: "Borehole", feedStorage: true },
+    { name: "House B", system: "Deep litter", capacity: 1400, water: "Borehole", feedStorage: true },
+    { name: "House C", system: "Battery cage", capacity: 1800, water: "Well", feedStorage: false },
+  ]));
+  local.set("jari-demo:v1:jari-simulated-feed-purchases", JSON.stringify([
+    { id: "purchase-001", date: "2026-10-12", feedType: "Starter", brand: "Top Feed", supplier: "Top Feed Depot", quantity: 120, unit: "bags", bagWeightKg: 25, amount: 240000, amountPaid: 240000, flock: "Broiler Batch 02" },
+  ]));
+  local.set("jari-demo:v1:jari-simulated-feed-use", JSON.stringify([
+    { id: "feed-use-001", date: "2026-10-10", feedType: "Starter", quantityKg: 160, flock: "Broiler Batch 02" },
+  ]));
+  local.set("jari-demo:v1:jari-simulated-sales", JSON.stringify([
+    { date: "08 Oct 2026", item: "Live broilers", amount: "₦360,000" },
+  ]));
+  local.set("jari-demo:v1:jari-simulated-expenses", JSON.stringify([
+    { date: "06 Oct 2026", category: "Labour", amount: "₦120,000" },
+  ]));
+  local.set("jari-demo:v1:jari-simulated-health-incidents", JSON.stringify([
+    { id: "health-001", flock: "Broiler Batch 02", date: "2026-10-14", symptoms: "Lethargy", affectedBirds: 5, birdsLost: 0, action: "Observed" },
+  ]));
+  local.set("jari-demo:v1:jari-simulated-farm-assets", JSON.stringify([
+    { name: "Feed mixer", quantity: 1, status: "Working", value: 320000, notes: "Used to prepare feed for the bird groups." },
+  ]));
+});
 
 test("one-time migration preserves existing demo farm records", () => {
   local.set("jari-simulated-farm-profile", JSON.stringify({ farmName: "Existing demo", ownerName: "Farmer" }));
