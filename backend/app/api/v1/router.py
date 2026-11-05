@@ -10,6 +10,10 @@ from app.api.v1.endpoints import (
     sales,
     expenses,
     financial,
+    kyc,
+    documents,
+    admin,
+    institution,
 )
 
 api_router = APIRouter()
@@ -23,3 +27,7 @@ api_router.include_router(health.router)
 api_router.include_router(sales.router)
 api_router.include_router(expenses.router)
 api_router.include_router(financial.router)
+api_router.include_router(kyc.router)
+api_router.include_router(documents.router)
+api_router.include_router(admin.router)
+api_router.include_router(institution.router)

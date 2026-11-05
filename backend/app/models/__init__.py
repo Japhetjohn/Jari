@@ -12,6 +12,11 @@ from app.models.treatment_record import TreatmentRecord
 from app.models.sale import Sale
 from app.models.expense import Expense
 from app.models.payment import FinancialPayment
+from app.models.kyc import KycApplication
+from app.models.document import FarmDocument
+from app.models.institution import InstitutionProfile
+from app.models.institution_access import InstitutionFarmAccess
+from app.models.assessment import FarmRiskAssessment
 
 __all__ = [
     "User",
@@ -28,4 +33,9 @@ __all__ = [
     "Sale",
     "Expense",
     "FinancialPayment",
+    "KycApplication",
+    "FarmDocument",
+    "InstitutionProfile",
+    "InstitutionFarmAccess",
+    "FarmRiskAssessment",
 ]

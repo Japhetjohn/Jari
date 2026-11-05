@@ -53,3 +53,23 @@ class FlockMovementType(str, enum.Enum):
 class MovementDirection(str, enum.Enum):
     INFLOW = "inflow"
     OUTFLOW = "outflow"
+
+
+class KycStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    NEEDS_CHANGES = "needs_changes"
+    REJECTED = "rejected"
+
+
+class InstitutionStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class RiskBand(str, enum.Enum):
+    LOW_RISK = "Low Risk"
+    MODERATE_RISK = "Moderate Risk"
+    HIGH_RISK = "High Risk"
+

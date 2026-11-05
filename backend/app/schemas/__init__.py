@@ -53,6 +53,22 @@ from app.schemas.financial import (
     FinancialOverviewResponse,
     FinancialTransactionItem,
 )
+from app.schemas.kyc_and_institution import (
+    KycSubmitRequest,
+    KycReviewRequest,
+    KycResponse,
+    DocumentCreate,
+    DocumentResponse,
+    InstitutionRegistrationRequest,
+    InstitutionReviewRequest,
+    InstitutionProfileResponse,
+    AdminOverviewResponse,
+    AdminVerificationItem,
+    ProfileSignal,
+    RiskProfileResponse,
+    AssessmentCreateRequest,
+    AssessmentResponse,
+)
 
 __all__ = [
     "FarmerRegisterRequest",
@@ -98,4 +114,18 @@ __all__ = [
     "PaymentEntryResponse",
     "FinancialOverviewResponse",
     "FinancialTransactionItem",
+    "KycSubmitRequest",
+    "KycReviewRequest",
+    "KycResponse",
+    "DocumentCreate",
+    "DocumentResponse",
+    "InstitutionRegistrationRequest",
+    "InstitutionReviewRequest",
+    "InstitutionProfileResponse",
+    "AdminOverviewResponse",
+    "AdminVerificationItem",
+    "ProfileSignal",
+    "RiskProfileResponse",
+    "AssessmentCreateRequest",
+    "AssessmentResponse",
 ]
