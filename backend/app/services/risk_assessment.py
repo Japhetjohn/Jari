@@ -19,6 +19,7 @@ from app.models.expense import Expense
 from app.models.kyc import KycApplication
 from app.models.institution_access import InstitutionFarmAccess
 from app.models.assessment import FarmRiskAssessment
+from app.shared.enums import FlockMovementType
 
 
 class RiskAssessmentService:
@@ -48,7 +49,7 @@ class RiskAssessmentService:
         mortality_birds = db.scalar(
             select(func.coalesce(func.sum(FlockMovement.quantity), 0)).where(
                 FlockMovement.farm_id == farm_id,
-                FlockMovement.movement_type == "Mortality"
+                FlockMovement.type == FlockMovementType.MORTALITY
             )
         ) or 0
 

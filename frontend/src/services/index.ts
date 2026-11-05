@@ -330,283 +330,366 @@ export type MockApi = typeof mockApi;
 // WRAPPED EXPORTS (REAL BACKEND FIRST + REACTIVE UI SYNC)
 // ============================================================================
 
-export function saveFarmProfile(profile: SavedFarmProfile): SavedFarmProfile {
+export async function saveFarmProfile(profile: SavedFarmProfile): Promise<SavedFarmProfile> {
     simSaveFarmProfile(profile);
     if (getStoredToken()) {
-        backendSaveFarmProfile(profile).catch((e) => {
+        try {
+            await backendSaveFarmProfile(profile);
+        } catch (e: any) {
             console.error("Backend farm profile save failed:", e.message);
-        });
+            throw e;
+        }
     }
     return profile;
 }
 
-export function createPoultryHouse(house: Parameters<typeof simCreatePoultryHouse>[0]) {
+export async function createPoultryHouse(house: Parameters<typeof simCreatePoultryHouse>[0]) {
     const created = simCreatePoultryHouse(house);
     if (getStoredToken()) {
-        backendCreatePoultryHouse(house).catch((e) => {
+        try {
+            await backendCreatePoultryHouse(house);
+        } catch (e: any) {
             console.error("Backend house creation failed:", e.message);
-        });
+            throw e;
+        }
     }
     return created;
 }
 
-export function archivePoultryHouse(name: string) {
+export async function archivePoultryHouse(name: string) {
     simArchivePoultryHouse(name);
     if (getStoredToken()) {
-        backendArchivePoultryHouse(name, getPoultryHouses()).catch((e) => {
+        try {
+            await backendArchivePoultryHouse(name, getPoultryHouses());
+        } catch (e: any) {
             console.error("Backend house archive failed:", e.message);
-        });
+            throw e;
+        }
     }
 }
 
-export function updatePoultryHouse(name: string, draft: Parameters<typeof simUpdatePoultryHouse>[1]) {
+export async function updatePoultryHouse(name: string, draft: Parameters<typeof simUpdatePoultryHouse>[1]) {
     simUpdatePoultryHouse(name, draft);
     if (getStoredToken()) {
-        syncAllFromBackend().catch(() => { });
+        await syncAllFromBackend().catch(() => { });
     }
 }
 
-export function createFlockRecord(flock: Parameters<typeof simCreateFlockRecord>[0]) {
+export async function createFlockRecord(flock: Parameters<typeof simCreateFlockRecord>[0]) {
     const created = simCreateFlockRecord(flock);
     if (getStoredToken()) {
-        backendCreateFlock(flock, getPoultryHouses()).catch((e) => {
+        try {
+            await backendCreateFlock(flock, getPoultryHouses());
+        } catch (e: any) {
             console.error("Backend flock creation failed:", e.message);
-        });
+            throw e;
+        }
     }
     return created;
 }
 
-export function addFlockMovement(movement: Parameters<typeof simAddFlockMovement>[0]) {
+export async function addFlockMovement(movement: Parameters<typeof simAddFlockMovement>[0]) {
     simAddFlockMovement(movement);
     if (getStoredToken()) {
         const flocks = getFlockRecords();
         const matched = flocks.find((f) => f.name === movement.flock || f.id === movement.flock);
         if (matched?.id) {
-            backendRecordFlockMovement({
-                flockId: matched.id,
-                movementType: movement.type,
-                quantity: movement.quantity,
-                date: movement.date,
-                reason: movement.reason,
-                notes: movement.notes,
-            }).catch((e) => {
+            try {
+                await backendRecordFlockMovement({
+                    flockId: matched.id,
+                    movementType: movement.type,
+                    quantity: movement.quantity,
+                    date: movement.date,
+                    reason: movement.reason,
+                    notes: movement.notes,
+                });
+            } catch (e: any) {
                 console.error("Backend flock movement failed:", e.message);
-            });
+                throw e;
+            }
         }
     }
 }
 
-export function addFlockTransfer(transfer: Parameters<typeof simAddFlockTransfer>[0]) {
+export async function addFlockTransfer(transfer: Parameters<typeof simAddFlockTransfer>[0]) {
     simAddFlockTransfer(transfer);
     if (getStoredToken()) {
         const flocks = getFlockRecords();
-        const houses = getPoultryHouses();
-        const matchedFlock = flocks.find((f) => f.name === transfer.source || f.id === transfer.source);
-        const matchedHouse = houses.find((h) => h.name === transfer.destination || h.id === transfer.destination);
-        if (matchedFlock?.id && matchedHouse?.id) {
-            backendTransferFlock({
-                flockId: matchedFlock.id,
-                targetHouseId: matchedHouse.id,
-                quantity: transfer.quantity,
-                date: transfer.date,
-                reason: transfer.reason,
-            }).catch((e) => {
+        const sourceFlock = flocks.find((f) => f.name === transfer.source || f.id === transfer.source);
+        const destFlock = flocks.find((f) => f.name === transfer.destination || f.id === transfer.destination);
+        if (sourceFlock?.id && destFlock?.id) {
+            try {
+                await backendTransferFlock({
+                    sourceFlockId: sourceFlock.id,
+                    destinationFlockId: destFlock.id,
+                    quantity: transfer.quantity,
+                    date: transfer.date,
+                    reason: transfer.reason,
+                    notes: transfer.notes,
+                });
+            } catch (e: any) {
                 console.error("Backend flock transfer failed:", e.message);
-            });
+                throw e;
+            }
         }
     }
 }
 
-export function addFeedPurchase(purchase: Parameters<typeof simAddFeedPurchase>[0]) {
+export async function addFeedPurchase(purchase: Parameters<typeof simAddFeedPurchase>[0]) {
     const created = simAddFeedPurchase(purchase);
     if (getStoredToken()) {
-        backendAddFeedPurchase(purchase).catch((e) => {
+        try {
+            const flocks = getFlockRecords();
+            const matchedFlock = purchase.flock ? flocks.find((f) => f.name === purchase.flock || f.id === purchase.flock) : undefined;
+            await backendAddFeedPurchase({
+                date: purchase.date,
+                feedType: purchase.feedType,
+                brand: purchase.brand,
+                supplier: purchase.supplier,
+                quantity: purchase.quantity,
+                unit: purchase.unit,
+                bagWeightKg: purchase.bagWeightKg,
+                amount: purchase.amount,
+                amountPaid: purchase.amountPaid,
+                flockId: matchedFlock?.id,
+            });
+        } catch (e: any) {
             console.error("Backend feed purchase failed:", e.message);
-        });
+            throw e;
+        }
     }
     return created;
 }
 
-export function addFeedUse(use: Parameters<typeof simAddFeedUse>[0]) {
+export async function addFeedUse(use: Parameters<typeof simAddFeedUse>[0]) {
     const created = simAddFeedUse(use);
     if (getStoredToken()) {
         const flocks = getFlockRecords();
         const matched = flocks.find((f) => f.name === use.flock || f.id === use.flock);
-        backendAddFeedUse({
-            date: use.date,
-            feedType: use.feedType,
-            quantityKg: use.quantityKg,
-            flockId: matched?.id,
-            notes: use.notes,
-        }).catch((e) => {
+        try {
+            await backendAddFeedUse({
+                date: use.date,
+                feedType: use.feedType,
+                quantityKg: use.quantityKg,
+                flockId: matched?.id,
+                notes: use.notes,
+            });
+        } catch (e: any) {
             console.error("Backend feed consumption failed:", e.message);
-        });
+            throw e;
+        }
     }
     return created;
 }
 
-export function addProductionRecord(record: Parameters<typeof simAddProductionRecord>[0]) {
+export async function addProductionRecord(record: Parameters<typeof simAddProductionRecord>[0]) {
     const created = simAddProductionRecord(record);
     if (getStoredToken()) {
         const flocks = getFlockRecords();
         const matched = flocks.find((f) => f.name === record.flock || f.id === record.flock);
-        backendAddProduction({
-            date: record.date,
-            flockId: matched?.id,
-            eggsCollected: record.eggsCollected,
-            crackedEggs: record.damagedEggs,
-            averageBirdWeightKg: record.averageWeight,
-            notes: record.notes,
-        }).catch((e) => {
+        try {
+            await backendAddProduction({
+                date: record.date,
+                flockId: matched?.id,
+                type: record.type,
+                liveBirds: record.liveBirds,
+                eggsCollected: record.eggsCollected,
+                goodEggs: record.goodEggs,
+                damagedEggs: record.damagedEggs,
+                birdsWeighed: record.birdsWeighed,
+                averageWeight: record.averageWeight,
+                birdsReady: record.birdsReady,
+                notes: record.notes,
+            });
+        } catch (e: any) {
             console.error("Backend production record failed:", e.message);
-        });
+            throw e;
+        }
     }
     return created;
 }
 
-export function addHealthIncident(incident: Parameters<typeof simAddHealthIncident>[0]) {
+export async function addHealthIncident(incident: Parameters<typeof simAddHealthIncident>[0]) {
     const created = simAddHealthIncident(incident);
     if (getStoredToken()) {
         const flocks = getFlockRecords();
         const matched = flocks.find((f) => f.name === incident.flock || f.id === incident.flock);
-        backendAddHealthIncident({
-            date: incident.date,
-            flockId: matched?.id,
-            title: incident.symptoms,
-            severity: "Mild",
-            symptoms: incident.notes,
-            affectedCount: incident.affectedBirds,
-            mortalityCount: incident.birdsLost,
-            actionsTaken: incident.action,
-            resolved: incident.outcome === "Resolved",
-        }).catch((e) => {
+        try {
+            await backendAddHealthIncident({
+                date: incident.date,
+                flockId: matched?.id,
+                symptoms: incident.symptoms || incident.confirmedDiagnosis || "Observed symptoms",
+                affectedBirds: incident.affectedBirds,
+                birdsLost: incident.birdsLost,
+                action: incident.action,
+                outcome: incident.outcome,
+                notes: incident.notes,
+            });
+        } catch (e: any) {
             console.error("Backend health incident failed:", e.message);
-        });
+            throw e;
+        }
     }
     return created;
 }
 
-export function addVaccinationRecord(vacc: Parameters<typeof simAddVaccinationRecord>[0]) {
+export async function addVaccinationRecord(vacc: Parameters<typeof simAddVaccinationRecord>[0]) {
     const created = simAddVaccinationRecord(vacc);
     if (getStoredToken()) {
         const flocks = getFlockRecords();
         const matched = flocks.find((f) => f.name === vacc.flock || f.id === vacc.flock);
-        backendAddVaccination({
-            flockId: matched?.id,
-            vaccineName: vacc.vaccine,
-            dateAdministered: vacc.date,
-            administrator: vacc.givenBy,
-            notes: vacc.notes,
-        }).catch((e) => {
+        try {
+            await backendAddVaccination({
+                flockId: matched?.id,
+                vaccine: vacc.vaccine,
+                date: vacc.date,
+                birds: vacc.birds,
+                givenBy: vacc.givenBy,
+                notes: vacc.notes,
+            });
+        } catch (e: any) {
             console.error("Backend vaccination failed:", e.message);
-        });
+            throw e;
+        }
     }
     return created;
 }
 
-export function addTreatmentRecord(treat: Parameters<typeof simAddTreatmentRecord>[0]) {
+export async function addTreatmentRecord(treat: Parameters<typeof simAddTreatmentRecord>[0]) {
     const created = simAddTreatmentRecord(treat);
     if (getStoredToken()) {
         const flocks = getFlockRecords();
         const matched = flocks.find((f) => f.name === treat.flock || f.id === treat.flock);
-        backendAddTreatment({
-            flockId: matched?.id,
-            medicationName: treat.medicine || treat.treatment,
-            startDate: treat.date,
-            notes: treat.notes,
-        }).catch((e) => {
+        try {
+            await backendAddTreatment({
+                flockId: matched?.id,
+                treatment: treat.treatment,
+                medicine: treat.medicine,
+                date: treat.date,
+                birdsTreated: treat.birdsTreated,
+                givenBy: treat.givenBy,
+                notes: treat.notes,
+            });
+        } catch (e: any) {
             console.error("Backend treatment failed:", e.message);
-        });
+            throw e;
+        }
     }
     return created;
 }
 
-export function addSaleRecord(sale: Parameters<typeof simAddSaleRecord>[0]) {
+export async function addSaleRecord(sale: Parameters<typeof simAddSaleRecord>[0]) {
     const created = simAddSaleRecord(sale);
     if (getStoredToken()) {
         const numAmount = typeof sale.amount === "number" ? sale.amount : parseFloat(String(sale.amount).replace(/[^\d.-]/g, "")) || 0;
         const numReceived = typeof sale.amountReceived === "number" ? sale.amountReceived : numAmount;
-        backendAddSale({
-            date: sale.date,
-            product: sale.product || sale.item || "Other poultry products",
-            quantity: sale.quantity || 1,
-            unit: sale.unit || "Units",
-            unitPrice: (sale.quantity && numAmount) ? (numAmount / sale.quantity) : numAmount,
-            totalAmount: numAmount,
-            amountReceived: numReceived,
-            notes: sale.item || sale.product,
-        }).catch((e) => {
+        const flocks = getFlockRecords();
+        const matchedFlock = sale.flock ? flocks.find((f) => f.name === sale.flock || f.id === sale.flock) : undefined;
+        try {
+            await backendAddSale({
+                date: sale.date,
+                product: sale.product || sale.item || "Other poultry products",
+                quantity: sale.quantity || 1,
+                unit: sale.unit || "Units",
+                unitPrice: (sale.quantity && numAmount) ? (numAmount / sale.quantity) : numAmount,
+                totalAmount: numAmount,
+                amountReceived: numReceived,
+                flockId: matchedFlock?.id,
+                notes: sale.item || sale.product,
+            });
+        } catch (e: any) {
             console.error("Backend sale record failed:", e.message);
-        });
+            throw e;
+        }
     }
     return created;
 }
 
-export function recordSalePayment(id: string, amount: number, date?: string, note?: string) {
+export async function recordSalePayment(id: string, amount: number, date?: string, note?: string) {
     const res = simRecordSalePayment(id, amount, date, note);
     if (getStoredToken()) {
-        backendRecordSalePayment(id, amount, date, note).catch((e) => {
+        try {
+            await backendRecordSalePayment(id, amount, date, note);
+        } catch (e: any) {
             console.error("Backend sale payment failed:", e.message);
-        });
+            throw e;
+        }
     }
     return res;
 }
 
-export function addExpenseRecord(expense: Parameters<typeof simAddExpenseRecord>[0]) {
+export async function addExpenseRecord(expense: Parameters<typeof simAddExpenseRecord>[0]) {
     const created = simAddExpenseRecord(expense);
     if (getStoredToken()) {
         const numAmount = typeof expense.amount === "number" ? expense.amount : parseFloat(String(expense.amount).replace(/[^\d.-]/g, "")) || 0;
         const numPaid = typeof expense.amountPaid === "number" ? expense.amountPaid : numAmount;
-        backendAddExpense({
-            date: expense.date,
-            category: expense.category,
-            description: expense.note || expense.category,
-            totalAmount: numAmount,
-            amountPaid: numPaid,
-            recipient: "Vendor",
-            notes: expense.note,
-        }).catch((e) => {
+        const flocks = getFlockRecords();
+        const matchedFlock = expense.flock ? flocks.find((f) => f.name === expense.flock || f.id === expense.flock) : undefined;
+        try {
+            await backendAddExpense({
+                date: expense.date,
+                category: expense.category,
+                description: expense.note || expense.category,
+                totalAmount: numAmount,
+                amountPaid: numPaid,
+                flockId: matchedFlock?.id,
+                notes: expense.note,
+            });
+        } catch (e: any) {
             console.error("Backend expense record failed:", e.message);
-        });
+            throw e;
+        }
     }
     return created;
 }
 
-export function recordExpensePayment(id: string, amount: number, date?: string, note?: string) {
+export async function recordExpensePayment(id: string, amount: number, date?: string, note?: string) {
     const res = simRecordExpensePayment(id, amount, date, note);
     if (getStoredToken()) {
-        backendRecordExpensePayment(id, amount, date, note).catch((e) => {
+        try {
+            await backendRecordExpensePayment(id, amount, date, note);
+        } catch (e: any) {
             console.error("Backend expense payment failed:", e.message);
-        });
+            throw e;
+        }
     }
     return res;
 }
 
-export function saveKycApplication(application: Parameters<typeof simSaveKycApplication>[0]) {
+export async function saveKycApplication(application: Parameters<typeof simSaveKycApplication>[0]) {
     simSaveKycApplication(application);
     if (getStoredToken()) {
-        backendSubmitKyc(application).catch((e) => {
+        try {
+            await backendSubmitKyc(application);
+        } catch (e: any) {
             console.error("Backend KYC submission failed:", e.message);
-        });
+            throw e;
+        }
     }
 }
 
-export function addFarmDocument(doc: Parameters<typeof simAddFarmDocument>[0]) {
+export async function addFarmDocument(doc: Parameters<typeof simAddFarmDocument>[0]) {
     const created = simAddFarmDocument(doc);
     if (getStoredToken()) {
-        backendUploadDocument(doc).catch((e) => {
+        try {
+            await backendUploadDocument(doc);
+        } catch (e: any) {
             console.error("Backend document upload failed:", e.message);
-        });
+            throw e;
+        }
     }
     return created;
 }
 
-export function removeFarmDocument(id: string) {
+export async function removeFarmDocument(id: string) {
     simRemoveFarmDocument(id);
     if (getStoredToken()) {
-        backendDeleteDocument(id).catch((e) => {
+        try {
+            await backendDeleteDocument(id);
+        } catch (e: any) {
             console.error("Backend document removal failed:", e.message);
-        });
+            throw e;
+        }
     }
 }
 

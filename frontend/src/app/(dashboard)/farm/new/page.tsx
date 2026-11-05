@@ -25,6 +25,7 @@ export default function NewFarmPage() {
     const [form, setForm] = useState(initialForm);
     const [isSaved, setIsSaved] = useState(false);
     const [error, setError] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const existing = getFarmProfile();
@@ -43,14 +44,20 @@ export default function NewFarmPage() {
         setForm((previous) => ({ ...previous, biosecurity: updated }));
     };
 
-    const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setError("");
+        setIsSubmitting(true);
         try {
-            saveFarmProfile({ ...form, biosecurity: form.biosecurity });
+            await saveFarmProfile({ ...form, biosecurity: form.biosecurity });
             setIsSaved(true);
             window.setTimeout(() => router.push("/farm"), 500);
-        } catch (issue) { setIsSaved(false); setError(issue instanceof Error && /quota/i.test(issue.name + issue.message) ? "Browser storage is full. Download a backup or remove unused files before trying again." : "Farm details could not be saved. Please try again."); }
+        } catch (issue) {
+            setIsSaved(false);
+            setError(issue instanceof Error && /quota/i.test(issue.name + issue.message) ? "Browser storage is full. Download a backup or remove unused files before trying again." : issue instanceof Error ? issue.message : "Farm details could not be saved. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -240,9 +247,9 @@ export default function NewFarmPage() {
                     </button>
                     <button
                         type="submit"
-                        className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                        disabled={isSubmitting || isSaved} className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60"
                     >
-                        {isSaved ? "Saved" : "Save farm profile"}
+                        {isSubmitting ? "Saving..." : isSaved ? "Saved" : "Save farm profile"}
                     </button>
                 </div>
             </form>

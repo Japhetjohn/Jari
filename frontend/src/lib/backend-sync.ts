@@ -124,12 +124,12 @@ export function backendToFeedPurchase(b: any): FeedPurchaseRecord {
     date: b.date,
     feedType: b.feed_type,
     brand: b.brand || "",
-    supplier: b.notes || "Supplier",
-    quantity: b.quantity_bags,
-    unit: "bags",
+    supplier: b.supplier || b.notes || "Supplier",
+    quantity: b.quantity ?? b.quantity_bags ?? 0,
+    unit: (b.unit as "bags" | "kg") || "bags",
     bagWeightKg: Number(b.bag_weight_kg) || 25,
-    amount: Number(b.cost) || 0,
-    amountPaid: Number(b.amount_paid) || Number(b.cost) || 0,
+    amount: Number(b.amount ?? b.cost) || 0,
+    amountPaid: Number(b.amount_paid) || Number(b.amount ?? b.cost) || 0,
     flock: b.flock_name,
   };
 }
@@ -150,14 +150,14 @@ export function backendToProduction(b: any): ProductionRecord {
     id: b.id,
     date: b.date,
     flock: b.flock_name || "Flock",
-    type: "Daily collection",
-    liveBirds: 0,
+    type: (b.type as any) || "Daily collection",
+    liveBirds: b.live_birds ?? 0,
     eggsCollected: b.eggs_collected || 0,
-    goodEggs: Math.max(0, (b.eggs_collected || 0) - (b.cracked_eggs || 0)),
-    damagedEggs: b.cracked_eggs || 0,
-    birdsWeighed: 0,
-    averageWeight: Number(b.average_bird_weight_kg) || 0,
-    birdsReady: 0,
+    goodEggs: b.good_eggs ?? Math.max(0, (b.eggs_collected || 0) - (b.damaged_eggs || 0)),
+    damagedEggs: b.damaged_eggs ?? b.cracked_eggs ?? 0,
+    birdsWeighed: b.birds_weighed ?? 0,
+    averageWeight: Number(b.average_weight ?? b.average_bird_weight_kg) || 0,
+    birdsReady: b.birds_ready ?? 0,
     notes: b.notes || "",
   };
 }
@@ -166,14 +166,14 @@ export function backendToHealthIncident(b: any): HealthIncidentRecord {
   return {
     id: b.id,
     flock: b.flock_name || "",
-    date: b.incident_date,
+    date: b.date || b.incident_date,
     symptoms: b.symptoms || b.title,
-    affectedBirds: b.affected_count || 0,
-    birdsLost: b.mortality_count || 0,
-    action: b.actions_taken || "Action taken",
-    confirmedDiagnosis: b.title,
-    outcome: b.resolved ? "Resolved" : "Being monitored",
-    notes: b.symptoms || "",
+    affectedBirds: b.affected_birds ?? b.affected_count ?? 0,
+    birdsLost: b.birds_lost ?? b.mortality_count ?? 0,
+    action: b.action || b.actions_taken || "Action taken",
+    confirmedDiagnosis: b.symptoms || b.title,
+    outcome: (b.outcome as any) || (b.resolved ? "Resolved" : "Being monitored"),
+    notes: b.notes || b.symptoms || "",
   };
 }
 
@@ -181,10 +181,10 @@ export function backendToVaccination(b: any): VaccinationRecord {
   return {
     id: b.id,
     flock: b.flock_name || "",
-    vaccine: b.vaccine_name,
-    date: b.date_administered,
-    birds: 0,
-    givenBy: b.administrator || "",
+    vaccine: b.vaccine || b.vaccine_name,
+    date: b.date || b.date_administered,
+    birds: b.birds ?? 0,
+    givenBy: b.given_by || b.administrator || "",
     notes: b.notes || "",
   };
 }
@@ -193,11 +193,11 @@ export function backendToTreatment(b: any): TreatmentRecord {
   return {
     id: b.id,
     flock: b.flock_name || "",
-    date: b.start_date,
-    treatment: b.medication_name,
-    medicine: b.medication_name,
-    birdsTreated: 0,
-    givenBy: "Attendant",
+    date: b.date || b.start_date,
+    treatment: b.treatment || b.medication_name,
+    medicine: b.medicine || b.medication_name,
+    birdsTreated: b.birds_treated ?? 0,
+    givenBy: b.given_by || "Attendant",
     notes: b.notes || "",
   };
 }
@@ -218,8 +218,8 @@ export function backendToSale(b: any): SalesEntry {
     payments: (b.payments || []).map((p: any) => ({
       id: p.id,
       amount: Number(p.amount),
-      date: p.payment_date,
-      note: p.notes,
+      date: p.date || p.payment_date,
+      note: p.note || p.notes,
     })),
   };
 }
@@ -229,15 +229,15 @@ export function backendToExpense(b: any): ExpenseEntry {
     id: b.id,
     date: b.date,
     category: b.category,
-    amount: Number(b.total_amount) || 0,
+    amount: Number(b.amount ?? b.total_amount) || 0,
     amountPaid: Number(b.amount_paid) || 0,
     outstanding: Number(b.outstanding) || 0,
-    note: b.description || b.notes || "",
+    note: b.note || b.description || b.notes || "",
     payments: (b.payments || []).map((p: any) => ({
       id: p.id,
       amount: Number(p.amount),
-      date: p.payment_date,
-      note: p.notes,
+      date: p.date || p.payment_date,
+      note: p.note || p.notes,
     })),
   };
 }
@@ -550,21 +550,23 @@ export async function backendRecordFlockMovement(payload: {
 }
 
 export async function backendTransferFlock(payload: {
-  flockId: string;
-  targetHouseId: string;
+  sourceFlockId: string;
+  destinationFlockId: string;
   quantity: number;
   date: string;
   reason?: string;
+  notes?: string;
 }): Promise<void> {
   const token = getStoredToken();
   if (!token) return;
 
   await flockApi.transferFlock({
-    flock_id: payload.flockId,
-    target_house_id: payload.targetHouseId,
+    source_flock_id: payload.sourceFlockId,
+    destination_flock_id: payload.destinationFlockId,
     quantity: payload.quantity,
     date: payload.date,
-    reason: payload.reason,
+    reason: payload.reason || "Inter-flock bird transfer",
+    notes: payload.notes,
   });
   await syncAllFromBackend();
 }
@@ -573,9 +575,13 @@ export async function backendAddFeedPurchase(purchase: {
   date: string;
   feedType: string;
   brand?: string;
+  supplier?: string;
   quantity: number;
+  unit?: string;
   bagWeightKg?: number;
   amount: number;
+  amountPaid?: number;
+  flockId?: string;
   notes?: string;
 }): Promise<void> {
   const token = getStoredToken();
@@ -584,10 +590,14 @@ export async function backendAddFeedPurchase(purchase: {
   await feedApi.createPurchase({
     date: purchase.date,
     feed_type: purchase.feedType,
-    brand: purchase.brand,
-    quantity_bags: Number(purchase.quantity),
+    brand: purchase.brand || "Vital Feed",
+    supplier: purchase.supplier,
+    quantity: Number(purchase.quantity),
+    unit: purchase.unit || "bags",
     bag_weight_kg: Number(purchase.bagWeightKg) || 25,
-    cost: Number(purchase.amount),
+    amount: Number(purchase.amount),
+    amount_paid: Number(purchase.amountPaid) || Number(purchase.amount),
+    flock_id: purchase.flockId,
     notes: purchase.notes,
   });
   await syncAllFromBackend();
@@ -603,6 +613,10 @@ export async function backendAddFeedUse(use: {
   const token = getStoredToken();
   if (!token) return;
 
+  if (!use.flockId) {
+    throw new Error("A bird group must be selected for recording feed use.");
+  }
+
   await feedApi.recordConsumption({
     date: use.date,
     feed_type: use.feedType,
@@ -616,20 +630,34 @@ export async function backendAddFeedUse(use: {
 export async function backendAddProduction(prod: {
   date: string;
   flockId?: string;
+  type?: string;
+  liveBirds?: number;
   eggsCollected?: number;
-  crackedEggs?: number;
-  averageBirdWeightKg?: number;
+  goodEggs?: number;
+  damagedEggs?: number;
+  birdsWeighed?: number;
+  averageWeight?: number;
+  birdsReady?: number;
   notes?: string;
 }): Promise<void> {
   const token = getStoredToken();
   if (!token) return;
 
+  if (!prod.flockId) {
+    throw new Error("A bird group must be selected for recording production.");
+  }
+
   await productionApi.createRecord({
     date: prod.date,
     flock_id: prod.flockId,
-    eggs_collected: prod.eggsCollected ? Number(prod.eggsCollected) : undefined,
-    cracked_eggs: prod.crackedEggs ? Number(prod.crackedEggs) : undefined,
-    average_bird_weight_kg: prod.averageBirdWeightKg ? Number(prod.averageBirdWeightKg) : undefined,
+    type: prod.type || "Broiler",
+    live_birds: prod.liveBirds ? Number(prod.liveBirds) : 0,
+    eggs_collected: prod.eggsCollected ? Number(prod.eggsCollected) : 0,
+    good_eggs: prod.goodEggs ? Number(prod.goodEggs) : 0,
+    damaged_eggs: prod.damagedEggs ? Number(prod.damagedEggs) : 0,
+    birds_weighed: prod.birdsWeighed ? Number(prod.birdsWeighed) : 0,
+    average_weight: prod.averageWeight ? Number(prod.averageWeight) : 0,
+    birds_ready: prod.birdsReady ? Number(prod.birdsReady) : 0,
     notes: prod.notes,
   });
   await syncAllFromBackend();
@@ -638,50 +666,57 @@ export async function backendAddProduction(prod: {
 export async function backendAddHealthIncident(inc: {
   date: string;
   flockId?: string;
-  title: string;
-  severity?: string;
-  symptoms?: string;
-  affectedCount?: number;
-  mortalityCount?: number;
-  actionsTaken?: string;
-  resolved?: boolean;
+  title?: string;
+  symptoms: string;
+  affectedBirds: number;
+  birdsLost?: number;
+  action?: string;
+  outcome?: string;
+  notes?: string;
 }): Promise<void> {
   const token = getStoredToken();
   if (!token) return;
 
+  if (!inc.flockId) {
+    throw new Error("A bird group must be selected for recording a health incident.");
+  }
+
   await healthApi.createIncident({
-    incident_date: inc.date,
     flock_id: inc.flockId,
-    title: inc.title,
-    severity: inc.severity,
+    date: inc.date,
     symptoms: inc.symptoms,
-    affected_count: inc.affectedCount ? Number(inc.affectedCount) : undefined,
-    mortality_count: inc.mortalityCount ? Number(inc.mortalityCount) : undefined,
-    actions_taken: inc.actionsTaken,
-    resolved: inc.resolved,
+    affected_birds: Number(inc.affectedBirds) || 1,
+    birds_lost: Number(inc.birdsLost) || 0,
+    action: inc.action || "Monitoring",
+    outcome: inc.outcome || "Being monitored",
+    notes: inc.notes,
   });
   await syncAllFromBackend();
 }
 
 export async function backendAddVaccination(vacc: {
   flockId?: string;
-  vaccineName: string;
-  dateAdministered: string;
-  targetDisease?: string;
-  dosage?: string;
-  administrator?: string;
+  vaccine: string;
+  date: string;
+  birds?: number;
+  nextDate?: string;
+  givenBy?: string;
   notes?: string;
 }): Promise<void> {
   const token = getStoredToken();
   if (!token) return;
 
+  if (!vacc.flockId) {
+    throw new Error("A bird group must be selected for recording a vaccination.");
+  }
+
   await healthApi.createVaccination({
     flock_id: vacc.flockId,
-    vaccine_name: vacc.vaccineName,
-    date_administered: vacc.dateAdministered,
-    target_disease: vacc.targetDisease,
-    dosage: vacc.dosage,
-    administrator: vacc.administrator,
+    vaccine: vacc.vaccine,
+    date: vacc.date,
+    birds: Number(vacc.birds) || 100,
+    next_date: vacc.nextDate,
+    given_by: vacc.givenBy,
     notes: vacc.notes,
   });
   await syncAllFromBackend();
@@ -689,23 +724,27 @@ export async function backendAddVaccination(vacc: {
 
 export async function backendAddTreatment(treat: {
   flockId?: string;
-  incidentId?: string;
-  medicationName: string;
-  startDate: string;
-  endDate?: string;
-  dosage?: string;
+  treatment: string;
+  medicine?: string;
+  date: string;
+  birdsTreated?: number;
+  givenBy?: string;
   notes?: string;
 }): Promise<void> {
   const token = getStoredToken();
   if (!token) return;
 
+  if (!treat.flockId) {
+    throw new Error("A bird group must be selected for recording a treatment.");
+  }
+
   await healthApi.createTreatment({
     flock_id: treat.flockId,
-    incident_id: treat.incidentId,
-    medication_name: treat.medicationName,
-    start_date: treat.startDate,
-    end_date: treat.endDate,
-    dosage: treat.dosage,
+    treatment: treat.treatment,
+    medicine: treat.medicine,
+    date: treat.date,
+    birds_treated: Number(treat.birdsTreated) || 10,
+    given_by: treat.givenBy,
     notes: treat.notes,
   });
   await syncAllFromBackend();
@@ -716,7 +755,7 @@ export async function backendAddSale(sale: {
   product: string;
   quantity: number;
   unit?: string;
-  unitPrice: number;
+  unitPrice?: number;
   totalAmount: number;
   amountReceived?: number;
   flockId?: string;
@@ -730,9 +769,9 @@ export async function backendAddSale(sale: {
     product: sale.product,
     quantity: Number(sale.quantity),
     unit: sale.unit || "Units",
-    unit_price: Number(sale.unitPrice),
+    unit_price: Number(sale.unitPrice ?? (sale.quantity ? sale.totalAmount / sale.quantity : sale.totalAmount)),
     total_amount: Number(sale.totalAmount),
-    amount_received: sale.amountReceived ? Number(sale.amountReceived) : undefined,
+    amount_received: sale.amountReceived ? Number(sale.amountReceived) : 0,
     flock_id: sale.flockId,
     notes: sale.notes,
   });
@@ -745,9 +784,8 @@ export async function backendRecordSalePayment(saleId: string, amount: number, d
 
   await financialApi.recordSalePayment(saleId, {
     amount: Number(amount),
-    payment_date: date || new Date().toISOString().slice(0, 10),
-    payment_method: "Direct transfer",
-    notes: note,
+    date: date || new Date().toISOString().slice(0, 10),
+    note,
   });
   await syncAllFromBackend();
 }
@@ -755,10 +793,10 @@ export async function backendRecordSalePayment(saleId: string, amount: number, d
 export async function backendAddExpense(expense: {
   date: string;
   category: string;
-  description: string;
   totalAmount: number;
   amountPaid?: number;
-  recipient?: string;
+  description?: string;
+  flockId?: string;
   notes?: string;
 }): Promise<void> {
   const token = getStoredToken();
@@ -767,11 +805,10 @@ export async function backendAddExpense(expense: {
   await financialApi.createExpense({
     date: expense.date,
     category: expense.category,
-    description: expense.description,
-    total_amount: Number(expense.totalAmount),
-    amount_paid: expense.amountPaid ? Number(expense.amountPaid) : undefined,
-    recipient: expense.recipient,
-    notes: expense.notes,
+    amount: Number(expense.totalAmount),
+    amount_paid: expense.amountPaid ? Number(expense.amountPaid) : 0,
+    flock_id: expense.flockId,
+    note: expense.description || expense.notes || expense.category,
   });
   await syncAllFromBackend();
 }
@@ -782,9 +819,8 @@ export async function backendRecordExpensePayment(expenseId: string, amount: num
 
   await financialApi.recordExpensePayment(expenseId, {
     amount: Number(amount),
-    payment_date: date || new Date().toISOString().slice(0, 10),
-    payment_method: "Direct transfer",
-    notes: note,
+    date: date || new Date().toISOString().slice(0, 10),
+    note,
   });
   await syncAllFromBackend();
 }

@@ -218,39 +218,74 @@ export const flockApi = {
     breed?: string;
     source?: string;
     start_date?: string;
-    target_harvest_date?: string;
+    acquisition_date?: string;
+    cycle_start?: string;
+    age_at_acquisition?: number;
+    age_unit?: string;
+    purchase_cost?: number;
     notes?: string;
   }) {
+    const body = {
+      name: payload.name,
+      type: payload.type || "Broiler",
+      house_id: payload.house_id,
+      initial_birds: payload.initial_birds,
+      breed: payload.breed,
+      source: payload.source,
+      acquisition_date: payload.acquisition_date || payload.start_date || new Date().toISOString().slice(0, 10),
+      cycle_start: payload.cycle_start,
+      age_at_acquisition: payload.age_at_acquisition,
+      age_unit: payload.age_unit || "Days",
+      purchase_cost: payload.purchase_cost ?? 0,
+    };
     return apiRequest<any>("/flocks", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 
   async recordMovement(payload: {
     flock_id: string;
-    movement_type: string;
+    type?: string;
+    movement_type?: string;
     quantity: number;
     date: string;
     reason?: string;
     notes?: string;
   }) {
+    const body = {
+      flock_id: payload.flock_id,
+      type: payload.type || payload.movement_type || "Additional stocking",
+      quantity: payload.quantity,
+      date: payload.date,
+      reason: payload.reason || "Flock count update",
+      notes: payload.notes,
+    };
     return apiRequest<any>("/flocks/movement", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 
   async transferFlock(payload: {
-    flock_id: string;
-    target_house_id: string;
+    source_flock_id: string;
+    destination_flock_id: string;
     quantity: number;
     date: string;
     reason?: string;
+    notes?: string;
   }) {
+    const body = {
+      source_flock_id: payload.source_flock_id,
+      destination_flock_id: payload.destination_flock_id,
+      quantity: payload.quantity,
+      date: payload.date,
+      reason: payload.reason || "Inter-flock bird transfer",
+      notes: payload.notes,
+    };
     return apiRequest<any>("/flocks/transfer", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 };
@@ -264,14 +299,33 @@ export const feedApi = {
     date: string;
     feed_type: string;
     brand?: string;
-    quantity_bags: number;
+    supplier?: string;
+    quantity?: number;
+    quantity_bags?: number;
+    unit?: string;
     bag_weight_kg?: number;
-    cost: number;
+    amount?: number;
+    cost?: number;
+    amount_paid?: number;
+    flock_id?: string;
     notes?: string;
   }) {
+    const body = {
+      date: payload.date,
+      feed_type: payload.feed_type,
+      brand: payload.brand || "Standard Feed",
+      supplier: payload.supplier,
+      quantity: payload.quantity ?? payload.quantity_bags ?? 1,
+      unit: payload.unit || "bags",
+      bag_weight_kg: payload.bag_weight_kg ?? 25,
+      amount: payload.amount ?? payload.cost ?? 0,
+      amount_paid: payload.amount_paid ?? payload.amount ?? payload.cost ?? 0,
+      flock_id: payload.flock_id,
+      notes: payload.notes,
+    };
     return apiRequest<any>("/feed/purchases", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 
@@ -280,11 +334,10 @@ export const feedApi = {
   },
 
   async recordConsumption(payload: {
+    flock_id: string;
     date: string;
     feed_type: string;
     quantity_kg: number;
-    flock_id?: string;
-    house_id?: string;
     notes?: string;
   }) {
     return apiRequest<any>("/feed/consumption", {
@@ -294,7 +347,13 @@ export const feedApi = {
   },
 
   async getInventory() {
-    return apiRequest<{ items: any[]; total_bags: number; total_kg: number }>("/feed/inventory", {
+    return apiRequest<{
+      total_bought_kg: number;
+      total_used_kg: number;
+      total_available_kg: number;
+      total_spent: number;
+      items: any[];
+    }>("/feed/inventory", {
       method: "GET",
     });
   },
@@ -306,25 +365,47 @@ export const productionApi = {
   },
 
   async createRecord(payload: {
+    flock_id: string;
     date: string;
-    flock_id?: string;
+    type?: string;
+    live_birds?: number;
     eggs_collected?: number;
+    good_eggs?: number;
+    damaged_eggs?: number;
     cracked_eggs?: number;
+    birds_weighed?: number;
+    average_weight?: number;
     average_bird_weight_kg?: number;
+    birds_ready?: number;
     notes?: string;
   }) {
+    const body = {
+      flock_id: payload.flock_id,
+      date: payload.date,
+      type: payload.type || "Broiler",
+      live_birds: payload.live_birds ?? 0,
+      eggs_collected: payload.eggs_collected ?? 0,
+      good_eggs: payload.good_eggs ?? (payload.eggs_collected ? Math.max(0, payload.eggs_collected - (payload.damaged_eggs ?? payload.cracked_eggs ?? 0)) : 0),
+      damaged_eggs: payload.damaged_eggs ?? payload.cracked_eggs ?? 0,
+      birds_weighed: payload.birds_weighed ?? 0,
+      average_weight: payload.average_weight ?? payload.average_bird_weight_kg ?? 0,
+      birds_ready: payload.birds_ready ?? 0,
+      notes: payload.notes,
+    };
     return apiRequest<any>("/production", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 
   async getSummary() {
     return apiRequest<{
+      total_records: number;
       total_eggs_collected: number;
-      total_cracked_eggs: number;
-      crates_equivalent: number;
-      record_count: number;
+      total_good_eggs: number;
+      total_damaged_eggs: number;
+      total_birds_ready: number;
+      overall_average_weight: number;
     }>("/production/summary", { method: "GET" });
   },
 };
@@ -335,19 +416,33 @@ export const healthApi = {
   },
 
   async createIncident(payload: {
-    incident_date: string;
-    flock_id?: string;
-    title: string;
-    severity?: string;
+    flock_id: string;
+    date?: string;
+    incident_date?: string;
     symptoms?: string;
+    title?: string;
+    affected_birds?: number;
     affected_count?: number;
+    birds_lost?: number;
     mortality_count?: number;
+    action?: string;
     actions_taken?: string;
-    resolved?: boolean;
+    outcome?: string;
+    notes?: string;
   }) {
+    const body = {
+      flock_id: payload.flock_id,
+      date: payload.date || payload.incident_date || new Date().toISOString().slice(0, 10),
+      symptoms: payload.symptoms || payload.title || "Health incident observation",
+      affected_birds: payload.affected_birds ?? payload.affected_count ?? 1,
+      birds_lost: payload.birds_lost ?? payload.mortality_count ?? 0,
+      action: payload.action || payload.actions_taken || "Monitoring",
+      outcome: payload.outcome || "Being monitored",
+      notes: payload.notes,
+    };
     return apiRequest<any>("/health/incidents", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 
@@ -369,17 +464,29 @@ export const healthApi = {
   },
 
   async createVaccination(payload: {
-    flock_id?: string;
-    vaccine_name: string;
-    date_administered: string;
-    target_disease?: string;
-    dosage?: string;
+    flock_id: string;
+    vaccine?: string;
+    vaccine_name?: string;
+    date?: string;
+    date_administered?: string;
+    birds?: number;
+    next_date?: string;
+    given_by?: string;
     administrator?: string;
     notes?: string;
   }) {
+    const body = {
+      flock_id: payload.flock_id,
+      vaccine: payload.vaccine || payload.vaccine_name || "Vaccine",
+      date: payload.date || payload.date_administered || new Date().toISOString().slice(0, 10),
+      birds: payload.birds ?? 100,
+      next_date: payload.next_date,
+      given_by: payload.given_by || payload.administrator,
+      notes: payload.notes,
+    };
     return apiRequest<any>("/health/vaccinations", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 
@@ -388,22 +495,39 @@ export const healthApi = {
   },
 
   async createTreatment(payload: {
-    flock_id?: string;
-    incident_id?: string;
-    medication_name: string;
-    start_date: string;
-    end_date?: string;
-    dosage?: string;
+    flock_id: string;
+    treatment?: string;
+    medication_name?: string;
+    medicine?: string;
+    date?: string;
+    start_date?: string;
+    birds_treated?: number;
+    given_by?: string;
     notes?: string;
   }) {
+    const body = {
+      flock_id: payload.flock_id,
+      treatment: payload.treatment || payload.medication_name || "Treatment",
+      medicine: payload.medicine || payload.medication_name,
+      date: payload.date || payload.start_date || new Date().toISOString().slice(0, 10),
+      birds_treated: payload.birds_treated ?? 10,
+      given_by: payload.given_by || "Attendant",
+      notes: payload.notes,
+    };
     return apiRequest<any>("/health/treatments", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 
   async getOverview() {
-    return apiRequest<any>("/health/overview", { method: "GET" });
+    return apiRequest<{
+      total_incidents: number;
+      total_birds_affected: number;
+      total_birds_lost: number;
+      total_vaccinations: number;
+      total_treatments: number;
+    }>("/health/overview", { method: "GET" });
   },
 };
 
@@ -415,24 +539,47 @@ export const financialApi = {
   async createSale(payload: {
     date: string;
     product: string;
-    quantity: number;
+    quantity?: number;
     unit?: string;
-    unit_price: number;
-    total_amount: number;
+    unit_price?: number;
+    unitPrice?: number;
+    total_amount?: number;
+    totalAmount?: number;
     amount_received?: number;
+    amountReceived?: number;
     flock_id?: string;
+    flockId?: string;
     notes?: string;
   }) {
+    const qty = payload.quantity ?? 1;
+    const total = payload.total_amount ?? payload.totalAmount ?? 0;
+    const unitPrice = payload.unit_price ?? payload.unitPrice ?? (qty > 0 ? total / qty : total);
+    const body = {
+      date: payload.date,
+      product: payload.product,
+      quantity: qty,
+      unit: payload.unit || "Units",
+      unit_price: unitPrice,
+      total_amount: total,
+      amount_received: payload.amount_received ?? payload.amountReceived ?? 0,
+      flock_id: payload.flock_id ?? payload.flockId,
+      notes: payload.notes,
+    };
     return apiRequest<any>("/sales", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 
-  async recordSalePayment(saleId: string, payload: { amount: number; payment_date: string; payment_method?: string; notes?: string }) {
+  async recordSalePayment(saleId: string, payload: { amount: number; payment_date?: string; date?: string; payment_method?: string; notes?: string; note?: string }) {
+    const body = {
+      amount: payload.amount,
+      date: payload.date || payload.payment_date || new Date().toISOString().slice(0, 10),
+      note: payload.note || payload.notes,
+    };
     return apiRequest<any>(`/sales/${saleId}/payments`, {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 
@@ -443,22 +590,41 @@ export const financialApi = {
   async createExpense(payload: {
     date: string;
     category: string;
-    description: string;
-    total_amount: number;
-    amount_paid?: number;
-    recipient?: string;
+    description?: string;
+    note?: string;
     notes?: string;
+    total_amount?: number;
+    totalAmount?: number;
+    amount?: number;
+    amount_paid?: number;
+    amountPaid?: number;
+    recipient?: string;
+    flock_id?: string;
+    flockId?: string;
   }) {
+    const body = {
+      date: payload.date,
+      category: payload.category,
+      amount: payload.amount ?? payload.total_amount ?? payload.totalAmount ?? 0,
+      amount_paid: payload.amount_paid ?? payload.amountPaid ?? 0,
+      flock_id: payload.flock_id ?? payload.flockId,
+      note: payload.note || payload.description || payload.notes,
+    };
     return apiRequest<any>("/expenses", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 
-  async recordExpensePayment(expenseId: string, payload: { amount: number; payment_date: string; payment_method?: string; notes?: string }) {
+  async recordExpensePayment(expenseId: string, payload: { amount: number; payment_date?: string; date?: string; payment_method?: string; notes?: string; note?: string }) {
+    const body = {
+      amount: payload.amount,
+      date: payload.date || payload.payment_date || new Date().toISOString().slice(0, 10),
+      note: payload.note || payload.notes,
+    };
     return apiRequest<any>(`/expenses/${expenseId}/payments`, {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 

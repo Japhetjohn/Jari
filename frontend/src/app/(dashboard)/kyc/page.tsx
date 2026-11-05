@@ -14,6 +14,7 @@ export default function KycPage() {
   const [application, setApplication] = useState<KycApplication | null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedNow, setSubmittedNow] = useState(false);
 
   useEffect(() => {
@@ -25,16 +26,21 @@ export default function KycPage() {
     setApplication(saved);
   }, []);
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
+    setIsSubmitting(true);
     const next: KycApplication = { farmName: farmName.trim(), location: location.trim(), phone: phone.trim(), status: "pending", submittedAt: new Date().toISOString() };
     try {
-      saveKycApplication(next);
+      await saveKycApplication(next);
       setApplication(next);
-      setNotice("Your farm review request has been saved in this browser.");
+      setNotice("Your farm review request has been submitted successfully.");
       setSubmittedNow(true);
-    } catch (issue) { setError(issue instanceof Error && /quota/i.test(issue.name + issue.message) ? "Browser storage is full. Download a backup or remove unused files before trying again." : "Your request could not be saved. Please try again."); }
+    } catch (issue) {
+      setError(issue instanceof Error && /quota/i.test(issue.name + issue.message) ? "Browser storage is full. Download a backup or remove unused files before trying again." : issue instanceof Error ? issue.message : "Your request could not be saved. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const statusText = application?.status === "approved" ? "Marked verified in demo" : application?.status === "needs_changes" ? "More details needed" : application?.status === "pending" ? "Waiting for demo review" : "Not sent yet";
@@ -65,7 +71,7 @@ export default function KycPage() {
           <label className="label-text sm:col-span-2">Farm location<input required minLength={3} maxLength={180} autoComplete="street-address" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Community, local government, state" /></label>
           <label className="label-text sm:col-span-2">Phone number<input required type="tel" inputMode="tel" autoComplete="tel" minLength={7} maxLength={24} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="A number we can reach you on" /></label>
         </div>
-        <div className="mt-5 flex flex-col justify-between gap-3 rounded-xl bg-[#f5f6f2] p-4 sm:flex-row sm:items-center"><p className="flex items-start gap-2 text-xs leading-5 text-[#717b6e]"><MapPin size={15} className="mt-0.5 shrink-0 text-[#688363]" />The admin demo on this browser can review this request. It is not sent to the JARI team.</p><button type="submit" disabled={requestDisabled} className="min-h-11 shrink-0 rounded-full bg-[#244b35] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#193d2b] disabled:cursor-not-allowed disabled:opacity-50">{requestButtonLabel}</button></div>
+        <div className="mt-5 flex flex-col justify-between gap-3 rounded-xl bg-[#f5f6f2] p-4 sm:flex-row sm:items-center"><p className="flex items-start gap-2 text-xs leading-5 text-[#717b6e]"><MapPin size={15} className="mt-0.5 shrink-0 text-[#688363]" />The admin demo on this browser can review this request. It is not sent to the JARI team.</p><button type="submit" disabled={requestDisabled || isSubmitting} className="min-h-11 shrink-0 rounded-full bg-[#244b35] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#193d2b] disabled:cursor-not-allowed disabled:opacity-50">{isSubmitting ? "Submitting..." : requestButtonLabel}</button></div>
       </form></>}
       <p className="text-center text-[10px] leading-5 text-[#92998e]">This request is for a JARI farm review. It does not guarantee insurance or financing.</p>
     </div>

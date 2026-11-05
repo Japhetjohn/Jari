@@ -32,8 +32,8 @@ def upgrade() -> None:
         sa.Column('full_name', sa.String(length=255), nullable=False),
         sa.Column('phone', sa.String(length=32), nullable=False),
         sa.Column('hashed_password', sa.String(length=255), nullable=False),
-        sa.Column('role', sa.Enum('farmer', 'admin', 'institutional_user', name='user_role'), nullable=False, server_default='farmer'),
-        sa.Column('status', sa.Enum('active', 'suspended', 'pending', name='account_status'), nullable=False, server_default='active'),
+        sa.Column('role', sa.Enum('farmer', 'admin', 'institutional_user', name='user_role', create_type=False), nullable=False, server_default='farmer'),
+        sa.Column('status', sa.Enum('active', 'suspended', 'pending', name='account_status', create_type=False), nullable=False, server_default='active'),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.PrimaryKeyConstraint('id')

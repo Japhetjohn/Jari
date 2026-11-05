@@ -17,19 +17,23 @@ export default function NewPoultryHousePage() {
     const router = useRouter();
     const [form, setForm] = useState(initialForm);
     const [error, setError] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) => {
         setForm((previous) => ({ ...previous, [field]: value }));
     };
 
-    const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setError("");
+        setIsSubmitting(true);
         try {
-            createPoultryHouse({ name: form.houseName, system: form.housingSystem, capacity: Number(form.maximumCapacity), water: form.waterSource, feedStorage: form.feedStorage, ventilation: form.ventilation });
+            await createPoultryHouse({ name: form.houseName, system: form.housingSystem, capacity: Number(form.maximumCapacity), water: form.waterSource, feedStorage: form.feedStorage, ventilation: form.ventilation });
             router.push("/poultry-houses");
         } catch (saveError) {
             setError(saveError instanceof Error ? saveError.message : "We could not save this farm house.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -125,7 +129,7 @@ export default function NewPoultryHousePage() {
                 <div className="mt-8 flex justify-end">
                     <button
                         type="submit"
-                        className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                        disabled={isSubmitting} className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60"
                     >
                         Save poultry house
                     </button>
