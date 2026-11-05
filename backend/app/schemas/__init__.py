@@ -5,6 +5,16 @@ from app.schemas.auth import (
     TokenResponse,
     TokenPayload,
 )
+from app.schemas.farm import (
+    FarmCreate,
+    FarmUpdate,
+    FarmResponse,
+)
+from app.schemas.poultry_house import (
+    PoultryHouseCreate,
+    PoultryHouseUpdate,
+    PoultryHouseResponse,
+)
 
 __all__ = [
     "FarmerRegisterRequest",
@@ -12,5 +22,10 @@ __all__ = [
     "UserProfileResponse",
     "TokenResponse",
     "TokenPayload",
+    "FarmCreate",
+    "FarmUpdate",
+    "FarmResponse",
+    "PoultryHouseCreate",
+    "PoultryHouseUpdate",
+    "PoultryHouseResponse",
 ]
-

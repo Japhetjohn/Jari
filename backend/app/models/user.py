@@ -1,11 +1,15 @@
 import uuid
 from datetime import datetime
+from typing import Optional, TYPE_CHECKING
 from sqlalchemy import String, DateTime, Enum as SQLEnum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.database.base import Base
 from app.shared.enums import UserRole, AccountStatus
+
+if TYPE_CHECKING:
+    from app.models.farm import Farm
 
 
 class User(Base):
@@ -44,6 +48,13 @@ class User(Base):
         nullable=False
     )
 
+    # Relationships
+    farm: Mapped[Optional["Farm"]] = relationship(
+        "Farm",
+        back_populates="owner",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+
     def __repr__(self) -> str:
         return f"<User {self.phone} ({self.role.value})>"
-
