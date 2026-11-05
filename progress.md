@@ -491,3 +491,21 @@ Status: Implemented; responsive review and backend integration remain
 
 ### Validation
 - `git diff --check` only. No build, tests or browser review.
+
+## Phase 23: Farmer dashboard interactions
+
+Status: Implemented; responsive browser review remains
+
+### Completed
+- Changed the notification bell to open the latest four notifications in a dropdown. Each item expands to show its details, and View all opens the full notification page.
+- Made each notification on the full page expandable.
+- Hid the "Your farm / Farmer workspace" title block on mobile while keeping the logo and controls.
+- Replaced the generic tour popup with a responsive spotlight around the exact farm shortcut, menu/navigation control, and a page action.
+- Made farm house cards open a complete known-details panel and bird group cards open flock details.
+- Made farm equipment cards open a detail panel with an edit form for name, quantity, value, condition and notes.
+- Reworded the birds and farm houses pages with simpler labels, removed the unsupported mortality metric, and renamed Messages to Notifications.
+- Reduced the desktop WebKit scrollbar width to 3px; it stays hidden on mobile.
+- Hid the farm review form after a successful submission and showed an animated checkmark confirmation.
+
+### Validation
+- `git diff --check` only; no build, tests or browser review.

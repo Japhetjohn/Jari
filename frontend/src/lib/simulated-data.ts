@@ -24,6 +24,14 @@ export type KycApplication = {
     reviewNote?: string;
 };
 
+export type FarmAssetRecord = {
+    name: string;
+    quantity: number;
+    status: "Working" | "Needs repair";
+    value: number;
+    notes?: string;
+};
+
 const readStorage = <T,>(key: string, fallback: T): T => {
     if (typeof window === "undefined") {
         return fallback;
@@ -51,6 +59,7 @@ export const STORAGE_KEYS = {
     salesRecords: "jari-simulated-sales",
     expensesRecords: "jari-simulated-expenses",
     kycApplication: "jari-simulated-kyc-application",
+    farmAssets: "jari-simulated-farm-assets",
 };
 
 export const defaultFarmProfile: SavedFarmProfile = {
@@ -108,3 +117,10 @@ export const getExpensesRecords = () => readStorage<any[]>(STORAGE_KEYS.expenses
     { date: "20 Oct 2026", category: "Veterinary", amount: "₦76,500" },
 ]);
 export const saveExpensesRecords = (value: any[]) => writeStorage(STORAGE_KEYS.expensesRecords, value);
+
+export const getFarmAssets = () => readStorage<FarmAssetRecord[]>(STORAGE_KEYS.farmAssets, [
+    { name: "Feed mixer", quantity: 1, status: "Working", value: 320000, notes: "Used to prepare feed for the bird groups." },
+    { name: "Water tank", quantity: 3, status: "Working", value: 180000, notes: "Stores water for the farm houses." },
+    { name: "Generator", quantity: 1, status: "Needs repair", value: 410000, notes: "Needs a service check before regular use." },
+]);
+export const saveFarmAssets = (value: FarmAssetRecord[]) => writeStorage(STORAGE_KEYS.farmAssets, value);

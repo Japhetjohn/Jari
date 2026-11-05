@@ -7,6 +7,7 @@ import { ArrowUpRight, Bell, ChevronDown, Menu, X } from "lucide-react";
 import { getSavedSession, logoutSimulation } from "@/lib/auth";
 import { JariLogo } from "@/components/brand/jari-logo";
 import { DashboardTour } from "@/components/layout/dashboard-tour";
+import { farmNotifications } from "@/lib/notifications";
 
 type NavigationItem = { href: string; label: string };
 type NavigationGroup = { label: string; items: NavigationItem[]; collapsible?: boolean };
@@ -78,6 +79,9 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
   const [drawerMounted, setDrawerMounted] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const notificationPanelRef = useRef<HTMLDivElement>(null);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [expandedNotification, setExpandedNotification] = useState<string | null>(null);
   const homePath = session ? homeForRole(session.role) : "/dashboard";
 
   useEffect(() => {
@@ -95,7 +99,17 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
 
   useEffect(() => {
     setMobileNavigationOpen(false);
+    setNotificationsOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+    const closeOutside = (event: MouseEvent) => {
+      if (notificationPanelRef.current && !notificationPanelRef.current.contains(event.target as Node)) setNotificationsOpen(false);
+    };
+    document.addEventListener("mousedown", closeOutside);
+    return () => document.removeEventListener("mousedown", closeOutside);
+  }, [notificationsOpen]);
 
   useEffect(() => {
     if (mobileNavigationOpen) {
@@ -145,7 +159,7 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
         <aside className="hidden w-[264px] shrink-0 flex-col rounded-[1.5rem] bg-[#eef1e8] p-4 lg:sticky lg:top-6 lg:flex lg:h-[calc(100svh-3rem)] lg:overflow-y-auto">
           <Link href={homePath} className="flex items-center px-2 py-2"><JariLogo size={28} subtitle={workspace} /></Link>
           <div className="mb-3 mt-7 px-3 text-[10px] font-bold uppercase tracking-[.16em] text-[#859080]">Workspace</div>
-          <WorkspaceNavigation navigation={navigation} pathname={pathname} homePath={homePath} label={`${workspace} navigation`} />
+          <div data-tour="workspace-navigation"><WorkspaceNavigation navigation={navigation} pathname={pathname} homePath={homePath} label={`${workspace} navigation`} /></div>
           <div className="mt-auto pt-6"><div className="rounded-[1.2rem] bg-white/75 p-4">
             <p className="text-xs font-semibold text-[#354537]">Need a hand?</p>
             <p className="mt-1 text-xs leading-5 text-[#72796f]">Contact the JARI team if you need help with your workspace.</p>
@@ -157,16 +171,16 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-40 -mx-3 -mt-3 bg-[#f7f7f2]/95 px-4 pb-3 pt-3 backdrop-blur-md sm:-mx-6 sm:-mt-6 sm:px-8 lg:-mx-8 lg:-mt-6 lg:mb-4 lg:px-8 lg:py-4">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3 lg:block"><Link href={homePath} aria-label="JARI home" className="lg:hidden"><JariLogo size={23} /></Link><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[.15em] text-[#71806f]">{eyebrow}</p><h1 className="mt-0.5 truncate font-serif text-lg tracking-tight sm:text-2xl">{workspace}</h1></div></div>
+              <div className="flex min-w-0 items-center gap-3 lg:block"><Link href={homePath} aria-label="JARI home" className="lg:hidden"><JariLogo size={23} /></Link><div className="hidden min-w-0 lg:block"><p className="text-[10px] font-bold uppercase tracking-[.15em] text-[#71806f]">{eyebrow}</p><h1 className="mt-0.5 truncate font-serif text-2xl tracking-tight">{workspace}</h1></div></div>
               <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                {session.role === "farmer" && <Link href="/notifications" aria-label="Notifications" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e9eee4] text-[#526052] transition-colors hover:bg-[#dfe8d9]"><Bell size={17} strokeWidth={1.7} /></Link>}
+                {session.role === "farmer" && <div ref={notificationPanelRef} className="relative"><button type="button" aria-label="Notifications" aria-expanded={notificationsOpen} aria-controls={notificationsOpen ? "notification-preview" : undefined} onClick={() => setNotificationsOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#e9eee4] text-[#526052] transition-colors hover:bg-[#dfe8d9]"><Bell size={17} strokeWidth={1.7} /><span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#76916a] ring-2 ring-[#e9eee4]" /></button>{notificationsOpen && <div id="notification-preview" className="absolute right-0 top-full z-[60] mt-3 w-[min(360px,calc(100vw-24px))] rounded-[1.25rem] bg-white p-3 shadow-[0_18px_55px_-25px_rgba(25,42,28,.42)]"><div className="flex items-center justify-between px-2 pb-2"><h2 className="text-sm font-semibold text-[#354237]">Notifications</h2><span className="text-[10px] text-[#899184]">Latest 4</span></div><div className="space-y-1">{farmNotifications.slice(0, 4).map((notification) => <div key={notification.id} className="rounded-xl bg-[#f7f8f4]"><button type="button" aria-expanded={expandedNotification === notification.id} onClick={() => setExpandedNotification((id) => id === notification.id ? null : notification.id)} className="w-full rounded-xl p-3 text-left hover:bg-[#eef2e9]"><span className="flex items-start justify-between gap-2"><span className="text-xs font-semibold text-[#354237]">{notification.title}</span><span className="shrink-0 text-[9px] text-[#899184]">{notification.time}</span></span><span className="mt-1 block text-[11px] leading-4 text-[#788174]">{notification.detail}</span>{expandedNotification === notification.id && <span className="mt-2 block border-t border-[#e8ece3] pt-2 text-[11px] leading-5 text-[#59645a]">{notification.fullText}</span>}</button></div>)}</div><Link href="/notifications" onClick={() => setNotificationsOpen(false)} className="mt-2 flex min-h-10 items-center justify-center rounded-full bg-[#244b35] text-xs font-semibold text-white hover:bg-[#193d2b]">View all notifications</Link></div>}</div>}
                 {session.role === "farmer" ? <Link href="/farm" data-tour="farm-profile" aria-label="View your farm profile" title="View farm profile" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#dfe8d9] text-sm font-semibold text-[#37533b] transition-colors hover:bg-[#cdddc4]">{session.fullName.charAt(0).toUpperCase()}</Link> : <span className="hidden h-10 w-10 items-center justify-center rounded-full bg-[#dfe8d9] text-sm font-semibold text-[#37533b] sm:flex" aria-label={session.fullName}>{session.fullName.charAt(0).toUpperCase()}</span>}
-                <button ref={mobileMenuButtonRef} type="button" aria-label={mobileNavigationOpen ? "Close workspace menu" : "Open workspace menu"} aria-expanded={mobileNavigationOpen} aria-controls={mobileNavigationOpen ? "mobile-workspace-navigation" : undefined} onClick={() => setMobileNavigationOpen((open) => !open)} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#244b35] text-white transition-colors hover:bg-[#193d2b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#76916a] lg:hidden">{mobileNavigationOpen ? <X size={19} /> : <Menu size={19} />}</button>
+                <button ref={mobileMenuButtonRef} data-tour="workspace-menu" type="button" aria-label={mobileNavigationOpen ? "Close workspace menu" : "Open workspace menu"} aria-expanded={mobileNavigationOpen} aria-controls={mobileNavigationOpen ? "mobile-workspace-navigation" : undefined} onClick={() => setMobileNavigationOpen((open) => !open)} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#244b35] text-white transition-colors hover:bg-[#193d2b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#76916a] lg:hidden">{mobileNavigationOpen ? <X size={19} /> : <Menu size={19} />}</button>
               </div>
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 py-5 sm:py-7">{children}</main>
+          <main data-tour="workspace-content" className="min-w-0 flex-1 py-5 sm:py-7">{children}</main>
         </div>
       </div>
 
@@ -174,10 +188,10 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
         <button type="button" aria-hidden="true" tabIndex={-1} onClick={closeMobileNavigation} className={`fixed inset-0 z-40 bg-[#17231a]/45 transition-opacity duration-300 lg:hidden ${drawerVisible ? "opacity-100" : "opacity-0"}`} />
         <aside id="mobile-workspace-navigation" aria-label={`${workspace} menu`} aria-hidden={!mobileNavigationOpen} className={`fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col bg-[#f7f8f3] p-4 transition-transform duration-300 ease-[cubic-bezier(.22,.61,.36,1)] lg:hidden sm:p-6 ${drawerVisible ? "translate-x-0" : "-translate-x-full"}`}>
           <div className="flex items-center justify-between gap-3 border-b border-[#e6ebe1] pb-4">
-            <Link href={homePath} onClick={closeMobileNavigation} aria-label="JARI home"><JariLogo size={25} subtitle={workspace} /></Link>
+            <Link href={homePath} onClick={closeMobileNavigation} aria-label="JARI home"><JariLogo size={25} /></Link>
             <button type="button" onClick={closeMobileNavigation} aria-label="Close workspace menu" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e9eee4] text-[#405742] transition-colors hover:bg-[#dfe8d9]"><X size={18} /></button>
           </div>
-          <p className="px-2 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[.16em] text-[#859080]">{workspace}</p>
+          <p className="px-2 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[.16em] text-[#859080]">Menu</p>
           <div className="min-h-0 flex-1 overflow-y-auto pb-3">
             <WorkspaceNavigation navigation={navigation} pathname={pathname} homePath={homePath} label={`${workspace} navigation`} onNavigate={closeMobileNavigation} />
           </div>
