@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { registerWithSimulation } from "@/lib/auth";
+import { registerWithBackend } from "@/lib/auth";
 import { InstitutionRegistrationWizard } from "../institution-registration-wizard";
 
 export default function RegisterPage() {
@@ -22,7 +22,7 @@ export default function RegisterPage() {
     if (error) setError("");
   };
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
@@ -37,7 +37,7 @@ export default function RegisterPage() {
 
     setIsSubmitting(true);
     try {
-      registerWithSimulation(form.fullName, form.phone, form.password);
+      await registerWithBackend(form.fullName, form.phone, form.password);
       router.push("/dashboard");
     } catch (registerError) {
       setError(registerError instanceof Error ? registerError.message : "Unable to create account.");

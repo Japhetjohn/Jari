@@ -25,11 +25,13 @@ class AuthService:
         if existing:
             raise ValueError("An account with this phone number already exists.")
 
+        assigned_role = data.role if data.role in (UserRole.FARMER, UserRole.INSTITUTIONAL_USER) else UserRole.FARMER
+
         user = User(
             full_name=data.full_name,
             phone=data.phone,
             hashed_password=get_password_hash(data.password),
-            role=UserRole.FARMER,
+            role=assigned_role,
             status=AccountStatus.ACTIVE,
         )
         db.add(user)

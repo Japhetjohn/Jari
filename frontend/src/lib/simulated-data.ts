@@ -71,6 +71,7 @@ export type ProductionRecord = {
 };
 
 export type FarmHouseRecord = {
+    id?: string;
     name: string;
     system: string;
     capacity: number;
@@ -80,10 +81,13 @@ export type FarmHouseRecord = {
     condition?: string;
     notes?: string;
     archived?: boolean;
+    birds?: number;
+    availableCapacity?: number;
 };
 
 export type FlockRecord = {
     id?: string;
+    houseId?: string;
     name: string;
     type: string;
     house: string;
@@ -101,6 +105,8 @@ export type FlockRecord = {
 export type FarmFlockMovement = {
     id: string;
     flock: string;
+    flockId?: string;
+    house?: string;
     date: string;
     type: "Initial stocking" | "Bird acquisition" | "Additional stocking" | "Mortality" | "Sale" | "Transfer in" | "Transfer out" | "Adjustment";
     quantity: number;

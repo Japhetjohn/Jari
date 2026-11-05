@@ -15,7 +15,7 @@ export default function DocumentsPage() {
     if (!file) return;
     setError(""); setNotice("");
     if (!supported.has(extension(file.name))) { setError("Choose a PDF, image or Office document."); return; }
-    if (file.size > 1_500_000) { setError("This demo supports files up to 1.5 MB each."); return; }
+    if (file.size > 2_500_000) { setError("Files must be up to 2.5 MB each."); return; }
     if (file.size === 0) { setError("This file is empty. Choose a file with content."); return; }
     setBusy(true);
     try {

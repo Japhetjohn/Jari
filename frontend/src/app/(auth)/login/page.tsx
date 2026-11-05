@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { loginWithSimulation } from "@/lib/auth";
+import { loginWithBackend } from "@/lib/auth";
 
 const demoAccounts = [
   { label: "Farmer", phone: "08030000000", password: "password123" },
@@ -23,16 +23,17 @@ export default function LoginPage() {
     if (error) setError("");
   };
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     setIsSubmitting(true);
 
     try {
-      const session = loginWithSimulation(form.phone, form.password);
-      const target = session.role === "admin" || session.role === "verification_agent"
-        ? "/admin"
-        : session.role === "institutional_user"
+      const session = await loginWithBackend(form.phone, form.password);
+      const target =
+        session.role === "admin" || session.role === "verification_agent"
+          ? "/admin"
+          : session.role === "institutional_user"
           ? "/institution"
           : "/dashboard";
       router.push(target);
@@ -52,21 +53,57 @@ export default function LoginPage() {
       </div>
 
       <div className="mb-5 rounded-xl bg-[#eef3eb] p-3.5 text-xs leading-5 text-[#456346]">
-        <p className="font-semibold">Choose a demo workspace</p><p className="mt-1">These example accounts run only in this browser.</p>
-        <div className="mt-3 grid grid-cols-2 gap-2">{demoAccounts.map((account) => <button key={account.label} type="button" onClick={() => { setForm({ phone: account.phone, password: account.password }); setError(""); }} className="min-h-10 rounded-lg bg-white px-2 text-left text-[11px] font-semibold text-[#36523b] transition-colors hover:bg-[#f8faf6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#76916a]">{account.label}</button>)}</div>
+        <p className="font-semibold">Choose a demo workspace</p>
+        <p className="mt-1">Pre-filled demo credentials for quick access.</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {demoAccounts.map((account) => (
+            <button
+              key={account.label}
+              type="button"
+              onClick={() => {
+                setForm({ phone: account.phone, password: account.password });
+                setError("");
+              }}
+              className="min-h-10 rounded-lg bg-white px-2 text-left text-[11px] font-semibold text-[#36523b] transition-colors hover:bg-[#f8faf6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#76916a]"
+            >
+              {account.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <form className="space-y-4" onSubmit={onSubmit}>
         <div>
           <label htmlFor="phone" className="label-text">Phone number</label>
-          <input id="phone" type="tel" autoComplete="tel" className="input-shell" placeholder="0803 000 0000" value={form.phone} onChange={(event) => handleChange("phone", event.target.value)} />
+          <input
+            id="phone"
+            type="tel"
+            autoComplete="tel"
+            className="input-shell"
+            placeholder="0803 000 0000"
+            value={form.phone}
+            onChange={(event) => handleChange("phone", event.target.value)}
+          />
         </div>
 
         <div>
           <label htmlFor="password" className="label-text">Password</label>
           <div className="relative">
-            <input id="password" type={showPassword ? "text" : "password"} autoComplete="current-password" className="input-shell pr-11" placeholder="Enter your password" value={form.password} onChange={(event) => handleChange("password", event.target.value)} />
-            <button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword((current) => !current)} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#758071] transition-colors hover:text-[#244b35]">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              className="input-shell pr-11"
+              placeholder="Enter your password"
+              value={form.password}
+              onChange={(event) => handleChange("password", event.target.value)}
+            />
+            <button
+              type="button"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() => setShowPassword((current) => !current)}
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#758071] transition-colors hover:text-[#244b35]"
+            >
               {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
             </button>
           </div>
@@ -79,7 +116,11 @@ export default function LoginPage() {
 
         {error && <div role="alert" className="rounded-xl bg-[#fbefeb] px-3.5 py-3 text-sm text-[#9a493c]">{error}</div>}
 
-        <button type="submit" disabled={isSubmitting} className="mt-2 min-h-12 w-full rounded-xl bg-[#244b35] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#193d2b] disabled:cursor-not-allowed disabled:bg-[#81947f]">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="mt-2 min-h-12 w-full rounded-xl bg-[#244b35] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#193d2b] disabled:cursor-not-allowed disabled:bg-[#81947f]"
+        >
           {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
       </form>

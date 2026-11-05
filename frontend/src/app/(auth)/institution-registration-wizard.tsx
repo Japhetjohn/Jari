@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, FileText, UploadCloud } from "lucide-react";
-import { registerInstitutionWithSimulation } from "@/lib/auth";
+import { registerInstitutionWithBackend } from "@/lib/auth";
 import type { InstitutionCategory, InstitutionVerificationDocument } from "@/lib/simulated-data";
 
 type Details = Record<string, string>;
@@ -132,14 +132,14 @@ export function InstitutionRegistrationWizard() {
     setStepIndex((current) => Math.min(current + 1, steps.length - 1));
   };
   const back = () => { setError(""); setStepIndex((current) => Math.max(0, current - 1)); };
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     if (!data.agreed) { setError("Please confirm that you have permission to submit these organisation details."); return; }
     if (data.password !== data.confirmPassword) { setError("The passwords do not match."); return; }
     setIsSubmitting(true);
     try {
-      const session = registerInstitutionWithSimulation(data.representative.phone, data.password, {
+      const session = await registerInstitutionWithBackend(data.representative.phone, data.password, {
         organisationName: data.organisationName.trim(), organisationType: data.organisationType, cacRegistrationNumber: data.cacRegistrationNumber.trim(), yearEstablished: data.yearEstablished,
         officialEmail: data.officialEmail.trim(), officialPhone: data.officialPhone.trim(), website: data.website.trim(), officeAddress: data.officeAddress.trim(), state: data.state.trim(), lga: data.lga.trim(), logo,
         categories: data.categories, services: data.services, representative: { ...data.representative, fullName: data.representative.fullName.trim(), email: data.representative.email.trim(), phone: data.representative.phone.trim() }, documents,

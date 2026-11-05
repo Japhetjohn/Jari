@@ -26,7 +26,40 @@ const sandbox = { exports: commonModule.exports, module: commonModule, window: w
 vm.runInNewContext(output, sandbox, { filename: "simulated-data.js" });
 const data = sandbox.module.exports;
 const authModule = { exports: {} };
-vm.runInNewContext(authOutput, { exports: authModule.exports, module: authModule, window: windowMock, console, require: (name) => { if (name === "@/lib/simulated-data") return data; throw new Error(`Unexpected module ${name}`); } }, { filename: "auth.js" });
+class ApiError extends Error {
+  constructor(status, message, details) {
+    super(message);
+    this.status = status;
+    this.details = details;
+  }
+}
+const apiClientMock = {
+  authApi: {
+    login: async () => ({ access_token: "token", user: {} }),
+    register: async () => ({ access_token: "token", user: {} }),
+    getMe: async () => ({}),
+  },
+  institutionApi: {
+    createProfile: async () => ({}),
+  },
+  setStoredToken: () => {},
+  removeStoredToken: () => {},
+  getStoredToken: () => null,
+  SESSION_STORAGE_KEY: "jari-simulated-session",
+  TOKEN_STORAGE_KEY: "jari_auth_token",
+  ApiError,
+};
+vm.runInNewContext(authOutput, {
+  exports: authModule.exports,
+  module: authModule,
+  window: windowMock,
+  console,
+  require: (name) => {
+    if (name === "@/lib/simulated-data") return data;
+    if (name === "@/lib/api-client") return apiClientMock;
+    throw new Error(`Unexpected module ${name}`);
+  }
+}, { filename: "auth.js" });
 const auth = authModule.exports;
 
 beforeEach(() => { local.clear(); events.length = 0; failNextSetFor = null; });

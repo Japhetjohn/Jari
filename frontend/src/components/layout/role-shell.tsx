@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Bell, ChevronDown, Menu, X } from "lucide-react";
-import { getSavedSession, logoutSimulation } from "@/lib/auth";
+import { getSavedSession, logoutSimulation, restoreSession } from "@/lib/auth";
 import { JariLogo } from "@/components/brand/jari-logo";
 import { DashboardTour } from "@/components/layout/dashboard-tour";
 import { getFarmNotifications, type FarmNotification } from "@/lib/notifications";
@@ -86,6 +86,7 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
   const homePath = session ? homeForRole(session.role) : "/dashboard";
 
   useEffect(() => {
+    let mounted = true;
     const currentSession = getSavedSession();
     if (!currentSession) {
       router.replace("/login");
@@ -96,6 +97,26 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
       return;
     }
     setSession(currentSession);
+
+    // Verify session against real backend if token exists
+    restoreSession().then((verified) => {
+      if (!mounted) return;
+      if (!verified) {
+        router.replace("/login");
+      } else {
+        setSession(verified);
+      }
+    });
+
+    const handleAuthExpired = () => {
+      router.replace("/login");
+    };
+    window.addEventListener("jari:auth-expired", handleAuthExpired);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("jari:auth-expired", handleAuthExpired);
+    };
   }, [allowedRoles, router]);
 
   useEffect(() => {

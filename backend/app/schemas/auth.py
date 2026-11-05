@@ -34,8 +34,10 @@ class UserBase(BaseModel):
 
 class FarmerRegisterRequest(UserBase):
     password: str = Field(..., min_length=6, max_length=128, description="Password (min 6 characters)")
+    role: Optional[UserRole] = Field(default=UserRole.FARMER, description="Account role (farmer or institutional_user)")
 
     @field_validator("password")
+
     @classmethod
     def validate_password_strength(cls, v: str) -> str:
         if len(v) < 6:
