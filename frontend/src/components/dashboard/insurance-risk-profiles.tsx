@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Activity, ArrowLeft, ArrowRight, Bird, CalendarDays, Check, ClipboardList, MapPin, Search, ShieldCheck, Stethoscope, Wheat, Award } from "lucide-react";
 import { institutionApi, getStoredToken } from "@/lib/api-client";
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type SignalStatus = "On record" | "Follow up" | "Not recorded";
 type ProfileSignal = { area: string; status: SignalStatus; detail: string };
@@ -75,6 +76,14 @@ export function InstitutionPortfolioStatistics() {
     ["Production entries", fallbackProfiles.reduce((sum, profile) => sum + profile.productionRecords, 0)],
     ["Financial entries", fallbackProfiles.reduce((sum, profile) => sum + profile.financialRecords, 0)],
   ] as const;
+  const riskMix = [
+    { name: "Lower follow-up", value: fallbackProfiles.filter((profile) => profile.riskBand === "Low Risk").length, color: "#55734f" },
+    { name: "Needs review", value: fallbackProfiles.filter((profile) => profile.riskBand !== "Low Risk").length, color: "#d2a64d" },
+  ].filter((item) => item.value > 0);
+  const flockMix = Object.entries(fallbackProfiles.reduce<Record<string, number>>((groups, profile) => {
+    groups[profile.production] = (groups[profile.production] || 0) + profile.birds;
+    return groups;
+  }, {})).map(([name, birds]) => ({ name, birds }));
 
   return <div className="mx-auto max-w-5xl space-y-5">
     <header>
@@ -92,6 +101,47 @@ export function InstitutionPortfolioStatistics() {
       <StatCard label="Birds across sample farms" value={number(totalBirds)} detail="Active poultry groups" />
       <StatCard label="Poultry houses" value={number(totalHouses)} detail="Across the sample farms" />
       <StatCard label="Farms with follow-up signals" value={number(farmsForFollowUp)} detail="Record gaps or items to review" />
+    </section>
+
+    <section aria-label="Sample portfolio charts" className="grid gap-4 xl:grid-cols-2">
+      <article className="rounded-[1.25rem] bg-white p-5 sm:p-6">
+        <div className="mb-4"><h2 className="text-sm font-semibold text-[#344236]">Farm record coverage</h2><p className="mt-1 text-xs leading-5 text-[#778173]">Entries saved across the sample portfolio.</p></div>
+        <div className="h-64 w-full" role="img" aria-label="Bar chart showing sample vaccination, health, feed, production, and financial records">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={recordRows.map(([name, entries]) => ({ name: name.replace(" entries", ""), entries }))} margin={{ top: 8, right: 8, left: -18, bottom: 4 }}>
+              <CartesianGrid stroke="#edf0e9" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: "#778173", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fill: "#92998e", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip cursor={{ fill: "#f5f7f2" }} contentStyle={{ border: "0", borderRadius: 12, boxShadow: "0 8px 24px rgba(35,52,37,.12)", fontSize: 12 }} />
+              <Bar dataKey="entries" name="Saved entries" fill="#55734f" radius={[6, 6, 0, 0]} maxBarSize={42} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </article>
+      <article className="rounded-[1.25rem] bg-white p-5 sm:p-6">
+        <div className="mb-2"><h2 className="text-sm font-semibold text-[#344236]">Flock types and review signals</h2><p className="mt-1 text-xs leading-5 text-[#778173]">Bird counts by production type, with profile review status.</p></div>
+        <div className="grid items-center gap-3 sm:grid-cols-[1fr_180px]">
+          <div className="h-56 min-w-0" role="img" aria-label="Bar chart comparing sample bird counts by production type">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={flockMix} margin={{ top: 8, right: 8, left: -18, bottom: 4 }}>
+                <CartesianGrid stroke="#edf0e9" vertical={false} />
+                <XAxis dataKey="name" tick={{ fill: "#778173", fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fill: "#92998e", fontSize: 10 }} axisLine={false} tickLine={false} />
+                <Tooltip cursor={{ fill: "#f5f7f2" }} contentStyle={{ border: "0", borderRadius: 12, boxShadow: "0 8px 24px rgba(35,52,37,.12)", fontSize: 12 }} />
+                <Bar dataKey="birds" name="Birds" fill="#8aa17d" radius={[6, 6, 0, 0]} maxBarSize={48} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex min-w-0 items-center gap-3 sm:block">
+            <div className="h-36 w-36 shrink-0" role="img" aria-label="Donut chart showing sample profiles by follow-up status">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart><Pie data={riskMix} dataKey="value" nameKey="name" innerRadius={42} outerRadius={62} paddingAngle={4} stroke="none">{riskMix.map((item) => <Cell key={item.name} fill={item.color} />)}</Pie><Tooltip contentStyle={{ border: "0", borderRadius: 12, boxShadow: "0 8px 24px rgba(35,52,37,.12)", fontSize: 12 }} /></PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="min-w-0 space-y-2 text-[10px] text-[#687465]"><p className="font-semibold text-[#344236]">Profile review</p><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#55734f]" />Lower follow-up <b className="ml-auto text-[#344236]">{riskMix.find((item) => item.name === "Lower follow-up")?.value || 0}</b></div><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#d2a64d]" />Needs review <b className="ml-auto text-[#344236]">{riskMix.find((item) => item.name === "Needs review")?.value || 0}</b></div></div>
+          </div>
+        </div>
+      </article>
     </section>
 
     <section className="rounded-[1.25rem] bg-white p-5 sm:p-6">
