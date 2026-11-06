@@ -23,7 +23,7 @@ router = APIRouter(prefix="/institution", tags=["Institutional Portal"])
 
 @router.get(
     "/me",
-    response_model=InstitutionProfileResponse,
+    response_model=Optional[InstitutionProfileResponse],
     summary="Get current institutional profile",
     description="Retrieve the organization profile and verification status for the authenticated institutional user."
 )
@@ -33,10 +33,7 @@ def get_my_institution(
 ):
     profile = InstitutionService.get_by_user(db, current_user.id)
     if not profile:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No institutional profile found for this user."
-        )
+        return None
     return profile
 
 

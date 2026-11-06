@@ -4,7 +4,7 @@ const allowedRoles: Array<"admin" | "verification_agent"> = ["admin", "verificat
 
 const navigation = [
   { label: "Overview", collapsible: false, items: [{ href: "/admin", label: "Overview" }] },
-  { label: "Farm operations", items: [{ href: "/admin/farmers", label: "Farmers" }, { href: "/admin/farms", label: "Farms" }, { href: "/admin/verification", label: "Verification" }, { href: "/admin/assessments", label: "Assessments" }] },
+  { label: "Farm operations", items: [{ href: "/admin/farmers", label: "Farmers" }, { href: "/admin/farms", label: "Farms" }, { href: "/admin/verification", label: "Verification" }, { href: "/admin/assessments", label: "Farm risk profiles" }] },
   { label: "Programs & partners", items: [{ href: "/admin/opportunities", label: "Opportunities" }, { href: "/admin/institutions", label: "Institutions" }] },
   { label: "Administration", items: [{ href: "/admin/reports", label: "Reports" }, { href: "/admin/settings", label: "Settings" }] },
 ];

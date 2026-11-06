@@ -24,7 +24,13 @@ class FarmService:
         # Check if farmer already has a registered primary farm
         existing = FarmService.get_farm_by_user(db, user.id)
         if existing:
-            raise ValueError("You have already registered a farm. A farmer can only have one primary farm.")
+            # If farm already exists, update it with new form values rather than failing
+            update_dict = data.model_dump(exclude_unset=True)
+            for field, value in update_dict.items():
+                setattr(existing, field, value)
+            db.commit()
+            db.refresh(existing)
+            return existing
 
         farm = Farm(
             user_id=user.id,
@@ -51,7 +57,27 @@ class FarmService:
     def update_farm(db: Session, user: User, data: FarmUpdate) -> Farm:
         farm = FarmService.get_farm_by_user(db, user.id)
         if not farm:
-            raise ValueError("No farm registered for this user.")
+            # Upsert: if no farm exists yet, create the primary farm
+            farm = Farm(
+                user_id=user.id,
+                farm_name=data.farm_name or f"{user.full_name}'s Farm",
+                owner_name=data.owner_name or user.full_name or "Farmer",
+                phone=data.phone or user.phone,
+                state=data.state or "Plateau",
+                lga=data.lga or "Jos South",
+                community=data.community or "Central",
+                establishment_date=data.establishment_date,
+                operation_type=data.operation_type or "Broiler",
+                production_system=data.production_system or "Deep litter",
+                number_of_houses=data.number_of_houses or 0,
+                water_source=data.water_source or "Borehole",
+                number_of_workers=data.number_of_workers or 0,
+                biosecurity=data.biosecurity or [],
+            )
+            db.add(farm)
+            db.commit()
+            db.refresh(farm)
+            return farm
 
         update_dict = data.model_dump(exclude_unset=True)
         for field, value in update_dict.items():

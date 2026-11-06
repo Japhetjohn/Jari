@@ -7,12 +7,13 @@ const https = require("https");
 const BASE_HOST = "72.61.97.210";
 const BASE_PORT = 443;
 const PREFIX = "/api/v1";
+const agent = new https.Agent({ keepAlive: true });
 
 let passedCount = 0;
 let failedCount = 0;
 const testResults = [];
 
-function request(options, data) {
+function request(options, data, retries = 2) {
   return new Promise((resolve, reject) => {
     const postData = data ? (typeof data === "string" ? data : JSON.stringify(data)) : null;
 
@@ -22,6 +23,7 @@ function request(options, data) {
       port: BASE_PORT,
       path: options.path,
       method: options.method || "GET",
+      agent,
       headers: {
         ...(postData
           ? {
@@ -52,7 +54,15 @@ function request(options, data) {
       });
     });
 
-    req.on("error", (err) => reject(err));
+    req.on("error", (err) => {
+      if (retries > 0 && (err.code === "ECONNRESET" || err.code === "ETIMEDOUT")) {
+        setTimeout(() => {
+          request(options, data, retries - 1).then(resolve, reject);
+        }, 300);
+      } else {
+        reject(err);
+      }
+    });
     if (postData) req.write(postData);
     req.end();
   });

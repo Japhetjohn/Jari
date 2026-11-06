@@ -5,6 +5,7 @@ import { Check, ClipboardCheck, MapPin, Phone, RotateCcw } from "lucide-react";
 import { getKycApplication, saveKycApplication } from "@/services";
 import { adminApi, getStoredToken } from "@/lib/api-client";
 import type { KycApplication } from "@/services";
+import { notifyToast } from "@/lib/toast";
 
 type VerificationItem = {
   id: string;
@@ -75,7 +76,8 @@ export default function VerificationPage() {
         setReviewNote("");
       }
     } catch (issue) {
-      setError(issue instanceof Error ? issue.message : "The review decision could not be saved.");
+      const message = issue instanceof Error ? issue.message : "The review decision could not be saved.";
+      setError(message); notifyToast("error", message);
     } finally {
       setIsSubmitting(false);
     }

@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { addFlockMovement } from "@/services";
 import type { FlockRecord, FarmFlockMovement } from "@/services";
+import { notifyToast } from "@/lib/toast";
 
 const movementTypes: FarmFlockMovement["type"][] = ["Bird acquisition", "Additional stocking", "Mortality", "Sale", "Adjustment"];
 
@@ -24,7 +25,8 @@ export function FlockMovementDialog({ flocks, onClose, onSaved }: { flocks: Floc
       await addFlockMovement({ flock, type, date, quantity: Number(quantity), reason: reason.trim(), notes: notes.trim() || undefined });
       onSaved();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "We could not save this bird record.");
+      const message = saveError instanceof Error ? saveError.message : "We could not save this bird record.";
+      setError(message); notifyToast("error", message);
     } finally {
       setIsSubmitting(false);
     }
