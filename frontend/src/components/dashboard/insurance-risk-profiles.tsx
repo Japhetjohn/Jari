@@ -96,7 +96,7 @@ export function InstitutionPortfolioStatistics() {
       <div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#55734f]"><Activity size={17} /></span><div><h2 className="text-sm font-semibold text-[#344a36]">Statistics are available by default</h2><p className="mt-1 max-w-3xl text-xs leading-5 text-[#687664]">These totals use fictional sample farms only. They are not calculated from a farmer’s private records. Individual farm details stay hidden until that farmer enables sharing.</p></div></div>
     </section> */}
 
-    <section aria-label="Sample portfolio totals" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section aria-label="Sample portfolio totals" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <StatCard label="Sample farms" value={number(sampleFarmCount)} detail="Fictional demo profiles" />
       <StatCard label="Birds across sample farms" value={number(totalBirds)} detail="Active poultry groups" />
       <StatCard label="Poultry houses" value={number(totalHouses)} detail="Across the sample farms" />
@@ -321,7 +321,7 @@ export function InsuranceRiskProfiles() {
           )}
         </div>
       ) : filtered.length ? (
-        <section aria-label="Farmer risk profiles" className="grid gap-3 sm:grid-cols-2">
+        <section aria-label="Farmer risk profiles" className="grid grid-cols-2 gap-3">
           {filtered.map((profile) => (
             <ProfileCard key={profile.id} profile={profile} onOpen={() => setSelectedId(profile.id)} />
           ))}
@@ -399,7 +399,7 @@ function ProfileDetails({ profile, onBack }: { profile: InsuranceDemoProfile; on
             </span>
           </div>
         </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <DetailMetric label="Production type" value={profile.production} />
           <DetailMetric label="Active birds" value={number(profile.birds)} />
           <DetailMetric label="Farm houses" value={String(profile.houses)} />

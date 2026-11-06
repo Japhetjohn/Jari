@@ -273,7 +273,7 @@ function AdminSection({
 
   return (
     <>
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Metric
           label="Registered farmers"
           value={adminOverview ? String(adminOverview.total_farmers) : "1"}
@@ -365,7 +365,7 @@ function InstitutionSection({ section, snapshot, status, totals, requests, reque
 
   return (
     <>
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Metric label="Verification status" value={status} />
         <Metric label="Active bird population" value={totals.birds.toLocaleString()} />
         <Metric label="Poultry houses" value={String(totals.houses)} />
@@ -404,7 +404,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function Metrics({ values }: { values: Array<[string, string]> }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       {values.map(([label, value]) => <Metric key={label} label={label} value={value} />)}
     </div>
   );
