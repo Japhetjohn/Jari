@@ -41,7 +41,7 @@ This tracker records the current frontend implementation. The JARI demo frontend
 - [x] Risk and assessment screens avoid unsupported risk scores or financing/insurance guarantees and explain when data is illustrative or incomplete.
 - [x] KYC review requests and reviewer decisions are persisted as demo data and labeled as local simulations.
 - [x] Admin and institution entry pages now provide role-specific verification, opportunity review, reports, and institution request workflows.
-- [x] Institution data is opt-in, read-only, limited to the stated farm summary, and gated by the farmer’s saved consent.
+- [x] Institution data is read-only, limited to the stated farm summary, and respects the farmer’s saved sharing choice; farmers can turn access off in Settings.
 - [x] Institution requests and opportunity applications save status; farmers can see review feedback. Provider submission is identified as simulated, with no external application sent.
 - [x] Registration now offers Farmer and Institution account types; the existing farmer form remains its own flow.
 - [x] Institution onboarding is a multi-step wizard for organisation details, official contacts/location, service categories, conditional service details, representative credentials, verification evidence, and final review.
@@ -50,7 +50,7 @@ This tracker records the current frontend implementation. The JARI demo frontend
 - [x] Registration collects category-relevant evidence (registration, lender/insurer licence, and grant-authority documents) plus optional representative-authority evidence and organisation logo.
 - [x] Institution submission creates a browser-local institutional account and a `Pending Verification` application; the institution home page displays the saved status and selected services.
 - [x] Added an institution-side Farmer Risk Profiles section with searchable, click-to-open sample poultry profiles, operational/health/financial record coverage, and clear fictional-demo/consent notes.
-- [x] Institution overview shows portfolio statistics from fictional sample farms by default; access to an individual farmer's farm summary remains opt-in and consent-gated.
+- [x] Institution overview shows portfolio statistics from fictional sample farms and a limited farm summary while farmer sharing is on; an explicit off choice hides identifying farm details.
 - [x] Removed unsupported eligibility/match claims; status reflects saved records only.
 
 ### Tests and code structure

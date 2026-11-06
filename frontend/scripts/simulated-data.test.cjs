@@ -280,7 +280,9 @@ test("equipment names are unique and equipment fields are validated", () => {
   assert.equal(data.getFarmAssets().at(-1).name, "Water pump");
 });
 
-test("institution summary requires explicit farmer sharing and requests persist", () => {
+test("institution farm summary is available until explicitly turned off and requests persist", () => {
+  assert.equal(data.getInstitutionDemoAccess().shared, true);
+  data.saveInstitutionDemoAccess(false);
   assert.equal(data.getInstitutionDemoAccess().shared, false);
   data.saveInstitutionDemoAccess(true);
   assert.equal(data.getInstitutionDemoAccess().shared, true);
@@ -296,7 +298,7 @@ test("demo farm reset restores records and keeps sign-in session storage separat
   data.saveInstitutionDemoAccess(true);
   data.resetDemoDatabase();
   assert.equal(data.getUserPreferences().productionReminders, true);
-  assert.equal(data.getInstitutionDemoAccess().shared, false);
+  assert.equal(data.getInstitutionDemoAccess().shared, true);
   assert.ok(local.has("jari-simulated-session"));
 });
 

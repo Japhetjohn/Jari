@@ -455,7 +455,13 @@ export const updateInstitutionRequest = (id: string, status: InstitutionRequestR
 };
 export const getUserPreferences = () => readStorage<UserPreferences>(STORAGE_KEYS.userPreferences, { productionReminders: true, healthReminders: true, financialUpdates: true, analyticsConsent: false });
 export const saveUserPreferences = (preferences: UserPreferences) => writeStorage(STORAGE_KEYS.userPreferences, preferences);
-export const getInstitutionDemoAccess = () => readStorage<InstitutionDemoAccess>(STORAGE_KEYS.institutionDemoAccess, { shared: false });
+export const getInstitutionDemoAccess = () => {
+    const access = readStorage<InstitutionDemoAccess>(STORAGE_KEYS.institutionDemoAccess, { shared: true });
+    // Older builds could leave an unintentional false default without a timestamp.
+    // Preserve explicit farmer choices, which are written with updatedAt.
+    if (!access.shared && !access.updatedAt) return { shared: true };
+    return access;
+};
 export const saveInstitutionDemoAccess = (shared: boolean) => writeWithActivity(STORAGE_KEYS.institutionDemoAccess, { shared, updatedAt: new Date().toISOString() });
 export const getInstitutionRegistrations = () => readStorage<InstitutionRegistrationRecord[]>(INSTITUTION_REGISTRATIONS_KEY, []);
 export const getInstitutionRegistration = (userId: string) => getInstitutionRegistrations().find((application) => application.userId === userId) || null;

@@ -82,14 +82,19 @@ export function WorkspaceHub({ section, institution = false }: { section: string
   };
 
   if (institution && section === "risk-profiles") return <InsuranceRiskProfiles />;
-  if (institution && section === "overview" && !shared) return <InstitutionPortfolioStatistics />;
+  if (institution && section === "overview") return (
+    <div className="space-y-6">
+      <InstitutionPortfolioStatistics />
+      {shared && <section className="mx-auto max-w-5xl space-y-5"><Header title="Farmer-shared farm summary" intro="This farmer has allowed this demo institution to view a limited summary of their farm records." institution /><InstitutionSection section={section} snapshot={snapshot} status={status} totals={totals} requests={requests} request={request} setRequest={setRequest} addRequest={addRequest} /></section>}
+    </div>
+  );
   if (institution && !shared) {
     return (
       <div className="mx-auto max-w-3xl space-y-5">
-        <Header title="Individual farm details are private" intro="The farmer has not enabled institution access to this farm's identifying summary." institution />
+        <Header title="Individual farm details are private" intro="The farmer has turned off institution access to this farm's identifying summary." institution />
         <section className={`${card} space-y-3 text-sm leading-6 text-[#657064]`}>
-          <p>Aggregate demo statistics are available from the <Link className="font-semibold text-[#355a3c] underline" href="/institution">institution overview</Link>. To view this farmer's limited farm summary, the farmer can sign in on this browser and enable sharing in <Link className="font-semibold text-[#355a3c] underline" href="/settings">Settings</Link>.</p>
-          <p>Even with sharing enabled, phone numbers and document contents remain private. Sharing is stored on this browser and does not send information to an organization or another device.</p>
+          <p>Aggregate demo statistics are available from the <Link className="font-semibold text-[#355a3c] underline" href="/institution">institution overview</Link>. The farmer can restore access from <Link className="font-semibold text-[#355a3c] underline" href="/settings">Settings</Link> on this browser.</p>
+          <p>Phone numbers and document contents remain private. This demo choice is stored on this browser and does not send information to an organization or another device.</p>
         </section>
       </div>
     );
