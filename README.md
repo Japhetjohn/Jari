@@ -13,6 +13,7 @@ deploy/                    Deployment-related configuration and assets
 scripts/deployment/        VPS deploy, SSH, and update helpers
 scripts/certificates/      Nginx and Certbot setup/renewal helpers
 scripts/diagnostics/       VPS, DNS, Nginx, and Certbot inspection scripts
+scripts/testing/           Standalone API and production-check scripts
 ```
 
 ## Requirements
@@ -185,10 +186,12 @@ Keep production `.env` files, database credentials, token secrets, and uploaded 
 - Actual farmer records must remain subject to farmer consent. JARI summaries are informational and do not guarantee a loan, insurance cover, claim, or grant.
 - The public login page intentionally does not display internal JARI administrator credentials. Create real backend administrators with the seeding command above and keep their credentials private.
 - Shell scripts under `scripts/` are server operations utilities, not part of the local app startup. They expect Bash and may require SSH/root access. Review them before use: the legacy `update-entrypoint.sh`, `update-env-py.sh`, and `update-migrations.sh` run `DROP SCHEMA public CASCADE`, which deletes database objects, and `seed-admin.sh` contains hard-coded demo credentials.
+- Root-level suites have been grouped under `scripts/testing/`; they are separate from the local frontend workflow tests and backend pytest suite. Read that folder's README before running them because the standalone API scripts target the production host by default.
 
 ## Project documentation
 
-- `frontend-remaining-work.md` — current frontend implementation and handoff tracker
-- `JARI Institution Onboarding and Institutional Dashboard Implementation.md` — institution product requirements
-- `frontend-documentation.md` and `Frontend Development.md` — frontend/product notes
+- [`frontend-remaining-work.md`](docs/frontend-remaining-work.md) — current frontend implementation and handoff tracker
+- [Institution onboarding and dashboard requirements](docs/JARI%20Institution%20Onboarding%20and%20Institutional%20Dashboard%20Implementation.md)
+- [`frontend-documentation.md`](docs/frontend-documentation.md) and [`Frontend Development.md`](docs/Frontend%20Development.md) — frontend/product notes
+- Other product handoff notes and runbooks are grouped under [`docs/`](docs/).
 - `backend/` — FastAPI configuration, API routes, models, migrations, and tests
