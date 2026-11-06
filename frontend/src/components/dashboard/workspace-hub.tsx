@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { addInstitutionRequest, getDashboardTotals, getDemoDatabaseSnapshot, getInstitutionDemoAccess, getInstitutionRequests, getOpportunityApplications, updateOpportunityApplication, type InstitutionRequestRecord, type OpportunityApplicationRecord } from "@/services";
-import { InsuranceRiskProfiles } from "@/components/dashboard/insurance-risk-profiles";
+import { InsuranceRiskProfiles, InstitutionPortfolioStatistics } from "@/components/dashboard/insurance-risk-profiles";
 import { adminApi, getStoredToken } from "@/lib/api-client";
 
 const card = "rounded-[1.25rem] bg-white p-5";
@@ -82,13 +82,14 @@ export function WorkspaceHub({ section, institution = false }: { section: string
   };
 
   if (institution && section === "risk-profiles") return <InsuranceRiskProfiles />;
+  if (institution && section === "overview" && !shared) return <InstitutionPortfolioStatistics />;
   if (institution && !shared) {
     return (
       <div className="mx-auto max-w-3xl space-y-5">
-        <Header title="No farm shared with this demo account" intro="The farmer has not enabled institution demo access. This local workspace cannot bypass that choice." institution />
+        <Header title="Individual farm details are private" intro="The farmer has not enabled institution access to this farm's identifying summary." institution />
         <section className={`${card} space-y-3 text-sm leading-6 text-[#657064]`}>
-          <p>To preview a limited summary, sign in to the farmer demo on this browser and open <Link className="font-semibold text-[#355a3c] underline" href="/settings">Settings</Link>. The farmer can turn sharing off at any time.</p>
-          <p>With sharing enabled, this demo still hides phone numbers and document contents. Nothing is sent to a real organization or another device.</p>
+          <p>Aggregate demo statistics are available from the <Link className="font-semibold text-[#355a3c] underline" href="/institution">institution overview</Link>. To view this farmer's limited farm summary, the farmer can sign in on this browser and enable sharing in <Link className="font-semibold text-[#355a3c] underline" href="/settings">Settings</Link>.</p>
+          <p>Even with sharing enabled, phone numbers and document contents remain private. Sharing is stored on this browser and does not send information to an organization or another device.</p>
         </section>
       </div>
     );

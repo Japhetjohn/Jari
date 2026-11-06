@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, ArrowLeft, Bird, CalendarDays, Check, ClipboardList, MapPin, Search, ShieldCheck, Stethoscope, Wheat, Award } from "lucide-react";
+import Link from "next/link";
+import { Activity, ArrowLeft, ArrowRight, Bird, CalendarDays, Check, ClipboardList, MapPin, Search, ShieldCheck, Stethoscope, Wheat, Award } from "lucide-react";
 import { institutionApi, getStoredToken } from "@/lib/api-client";
 
 type SignalStatus = "On record" | "Follow up" | "Not recorded";
@@ -61,6 +62,51 @@ const fallbackProfiles: InsuranceDemoProfile[] = [
 ];
 
 const number = (value: number) => new Intl.NumberFormat("en-NG").format(value);
+
+export function InstitutionPortfolioStatistics() {
+  const sampleFarmCount = fallbackProfiles.length;
+  const totalBirds = fallbackProfiles.reduce((sum, profile) => sum + profile.birds, 0);
+  const totalHouses = fallbackProfiles.reduce((sum, profile) => sum + profile.houses, 0);
+  const farmsForFollowUp = fallbackProfiles.filter((profile) => profile.signals.some((signal) => signal.status === "Follow up" || signal.status === "Not recorded")).length;
+  const recordRows = [
+    ["Vaccination entries", fallbackProfiles.reduce((sum, profile) => sum + profile.vaccinationRecords, 0)],
+    ["Health entries", fallbackProfiles.reduce((sum, profile) => sum + profile.healthRecords, 0)],
+    ["Feed entries", fallbackProfiles.reduce((sum, profile) => sum + profile.feedRecords, 0)],
+    ["Production entries", fallbackProfiles.reduce((sum, profile) => sum + profile.productionRecords, 0)],
+    ["Financial entries", fallbackProfiles.reduce((sum, profile) => sum + profile.financialRecords, 0)],
+  ] as const;
+
+  return <div className="mx-auto max-w-5xl space-y-5">
+    <header>
+      <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#587354]">Institution workspace · Portfolio overview</p>
+      <h1 className="mt-1 font-serif text-2xl font-medium tracking-tight text-[#20291f] sm:text-3xl">Poultry portfolio statistics</h1>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-[#737d70]">A quick view of sample farm, flock and record patterns for the institution demo.</p>
+    </header>
+
+    <section className="rounded-[1.25rem] bg-[#eaf0e5] p-4 sm:p-5">
+      <div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#55734f]"><Activity size={17} /></span><div><h2 className="text-sm font-semibold text-[#344a36]">Statistics are available by default</h2><p className="mt-1 max-w-3xl text-xs leading-5 text-[#687664]">These totals use fictional sample farms only. They are not calculated from a farmer’s private records. Individual farm details stay hidden until that farmer enables sharing.</p></div></div>
+    </section>
+
+    <section aria-label="Sample portfolio totals" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <StatCard label="Sample farms" value={number(sampleFarmCount)} detail="Fictional demo profiles" />
+      <StatCard label="Birds across sample farms" value={number(totalBirds)} detail="Active poultry groups" />
+      <StatCard label="Poultry houses" value={number(totalHouses)} detail="Across the sample farms" />
+      <StatCard label="Farms with follow-up signals" value={number(farmsForFollowUp)} detail="Record gaps or items to review" />
+    </section>
+
+    <section className="rounded-[1.25rem] bg-white p-5 sm:p-6">
+      <h2 className="text-sm font-semibold text-[#344236]">Records represented in the sample</h2>
+      <p className="mt-1 text-xs leading-5 text-[#778173]">Combined record counts across the fictional profiles; no farm names or farmer contact details are included here.</p>
+      <div className="mt-3 divide-y divide-[#edf0e9]">{recordRows.map(([label, count]) => <div key={label} className="flex items-center justify-between gap-3 py-3 text-sm"><span className="text-[#697368]">{label}</span><span className="font-semibold text-[#354237]">{number(count)}</span></div>)}</div>
+      <Link href="/institution/risk-profiles" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-[#244b35] px-4 text-xs font-semibold text-white transition hover:bg-[#193d2b]">Explore sample profiles<ArrowRight size={14} /></Link>
+    </section>
+    <p className="text-[10px] leading-5 text-[#8a9285]">Sample portfolio statistics demonstrate the product only. They are not a market estimate, insurance assessment, or underwriting decision.</p>
+  </div>;
+}
+
+function StatCard({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return <article className="rounded-[1.15rem] bg-white p-4 sm:p-5"><p className="text-[10px] font-semibold uppercase tracking-wide text-[#84907e]">{label}</p><p className="mt-2 text-2xl font-semibold tracking-tight text-[#29352a]">{value}</p><p className="mt-1 text-[10px] leading-4 text-[#7b8478]">{detail}</p></article>;
+}
 
 export function InsuranceRiskProfiles() {
   const [profiles, setProfiles] = useState<InsuranceDemoProfile[]>(fallbackProfiles);

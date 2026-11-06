@@ -50,6 +50,7 @@ This tracker records the current frontend implementation. The JARI demo frontend
 - [x] Registration collects category-relevant evidence (registration, lender/insurer licence, and grant-authority documents) plus optional representative-authority evidence and organisation logo.
 - [x] Institution submission creates a browser-local institutional account and a `Pending Verification` application; the institution home page displays the saved status and selected services.
 - [x] Added an institution-side Farmer Risk Profiles section with searchable, click-to-open sample poultry profiles, operational/health/financial record coverage, and clear fictional-demo/consent notes.
+- [x] Institution overview shows portfolio statistics from fictional sample farms by default; access to an individual farmer's farm summary remains opt-in and consent-gated.
 - [x] Removed unsupported eligibility/match claims; status reflects saved records only.
 
 ### Tests and code structure
