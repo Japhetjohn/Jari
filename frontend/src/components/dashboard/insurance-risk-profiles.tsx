@@ -83,9 +83,9 @@ export function InstitutionPortfolioStatistics() {
       <p className="mt-2 max-w-2xl text-sm leading-6 text-[#737d70]">A quick view of sample farm, flock and record patterns for the institution demo.</p>
     </header>
 
-    <section className="rounded-[1.25rem] bg-[#eaf0e5] p-4 sm:p-5">
+    {/* <section className="rounded-[1.25rem] bg-[#eaf0e5] p-4 sm:p-5">
       <div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#55734f]"><Activity size={17} /></span><div><h2 className="text-sm font-semibold text-[#344a36]">Statistics are available by default</h2><p className="mt-1 max-w-3xl text-xs leading-5 text-[#687664]">These totals use fictional sample farms only. They are not calculated from a farmer’s private records. Individual farm details stay hidden until that farmer enables sharing.</p></div></div>
-    </section>
+    </section> */}
 
     <section aria-label="Sample portfolio totals" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <StatCard label="Sample farms" value={number(sampleFarmCount)} detail="Fictional demo profiles" />
