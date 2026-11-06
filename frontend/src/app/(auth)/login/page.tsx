@@ -111,7 +111,6 @@ export default function LoginPage() {
         </div>
 
         <div className="flex items-center justify-between gap-3 pt-1 text-xs">
-          <span className="text-[#788174]">Sign-in stays on this browser until you sign out.</span>
           <Link href="/forgot-password" className="font-semibold text-[#496b50] transition-colors hover:text-[#244a35]">Forgot password?</Link>
         </div>
 
