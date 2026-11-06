@@ -41,7 +41,7 @@ This tracker records the current frontend implementation. The JARI demo frontend
 - [x] Risk and assessment screens avoid unsupported risk scores or financing/insurance guarantees and explain when data is illustrative or incomplete.
 - [x] KYC review requests and reviewer decisions are persisted as demo data and labeled as local simulations.
 - [x] Admin and institution entry pages now provide role-specific verification, opportunity review, reports, and institution request workflows.
-- [x] Institution workspace exposes aggregate portfolio statistics and inquiry requests only; individual farm identities, scores, records and documents are hidden.
+- [x] Institution portfolio cards show a consented farmer name, concise flock/house/record figures, JARI profile score and follow-up summary; phone, exact location and document contents remain hidden.
 - [x] Institution requests and opportunity applications save status; farmers can see review feedback. Provider submission is identified as simulated, with no external application sent.
 - [x] Registration now offers Farmer and Institution account types; the existing farmer form remains its own flow.
 - [x] Institution onboarding is a multi-step wizard for organisation details, official contacts/location, service categories, conditional service details, representative credentials, verification evidence, and final review.
@@ -49,8 +49,10 @@ This tracker records the current frontend implementation. The JARI demo frontend
 - [x] Institution service steps collect the lending, insurance, and grant details listed in `JARI Institution Onboarding and Institutional Dashboard Implementation.md`.
 - [x] Registration collects category-relevant evidence (registration, lender/insurer licence, and grant-authority documents) plus optional representative-authority evidence and organisation logo.
 - [x] Institution submission creates a browser-local institutional account and a `Pending Verification` application; the institution home page displays the saved status and selected services.
-- [x] Institution portfolio view uses clear aggregate poultry statistics and charts, with an inquiry route for institutions to request a farmer conversation.
-- [x] Farmer risk profile shows the farmer's own profile status, record coverage and links to update their information without inventing an automated risk score.
+- [x] Institution portfolio view combines clear aggregate poultry statistics and charts with consented profile cards and inquiry requests.
+- [x] Farmer risk profile shows the farmer's own record coverage, profile score and links to update their information; the score is not an approval decision.
+- [x] Farmer programme applications compare saved farm records with each demo programme checklist, show present and missing items, and refresh when farm records change.
+- [x] Institution Applications view shows shared farmer application summaries, record-match results and supports review or an information request.
 - [x] Admin assessments view shows detailed farm and record information for review; the institution workspace does not expose that individual profile view.
 - [x] Removed unsupported eligibility/match claims; status reflects saved records only.
 

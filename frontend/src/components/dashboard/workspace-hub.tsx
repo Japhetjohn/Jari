@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { addInstitutionRequest, getDashboardTotals, getDemoDatabaseSnapshot, getInstitutionRequests, getOpportunityApplications, updateOpportunityApplication, type InstitutionRequestRecord, type OpportunityApplicationRecord } from "@/services";
+import { addInstitutionRequest, getDashboardTotals, getDemoDatabaseSnapshot, getInstitutionDemoAccess, getInstitutionRequests, getOpportunityApplications, updateOpportunityApplication, type InstitutionRequestRecord, type OpportunityApplicationRecord } from "@/services";
 import { InstitutionPortfolioStatistics } from "@/components/dashboard/insurance-risk-profiles";
 import { adminApi, getStoredToken } from "@/lib/api-client";
 import { notifyToast } from "@/lib/toast";
@@ -11,11 +11,12 @@ const card = "rounded-[1.25rem] bg-white p-5";
 const money = (amount: number) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(amount || 0);
 const titles: Record<string, string> = {
   overview: "Workspace overview", farmers: "Farmer directory", farms: "Farm records", assessments: "Farm record review", opportunities: "Opportunity applications", institutions: "Institution partners", reports: "Farm reports", settings: "Workspace settings",
-  "institution-risk-profiles": "Portfolio statistics", "institution-farms": "Farm access", "institution-assessments": "Portfolio statistics", "institution-reports": "Portfolio summary", "institution-documents": "Shared documents", "institution-referrals": "Support referrals", "institution-requests": "Requests to the farm", "institution-settings": "Institution access",
+  "institution-risk-profiles": "Farmer profiles", "institution-applications": "Applications", "institution-farms": "Farm access", "institution-assessments": "Portfolio statistics", "institution-reports": "Portfolio summary", "institution-documents": "Shared documents", "institution-referrals": "Support referrals", "institution-requests": "Requests to the farm", "institution-settings": "Institution access",
 };
 
 export function WorkspaceHub({ section, institution = false }: { section: string; institution?: boolean }) {
   const [snapshot, setSnapshot] = useState<ReturnType<typeof getDemoDatabaseSnapshot> | null>(null);
+  const [shared, setShared] = useState(false);
   const [applications, setApplications] = useState<OpportunityApplicationRecord[]>([]);
   const [requests, setRequests] = useState<InstitutionRequestRecord[]>([]);
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
@@ -38,6 +39,7 @@ export function WorkspaceHub({ section, institution = false }: { section: string
   useEffect(() => {
     const sync = () => {
       setSnapshot(getDemoDatabaseSnapshot());
+      setShared(getInstitutionDemoAccess().shared);
       setApplications(getOpportunityApplications());
       setRequests(getInstitutionRequests());
     };
@@ -83,6 +85,7 @@ export function WorkspaceHub({ section, institution = false }: { section: string
   };
 
   if (institution && (section === "risk-profiles" || section === "overview")) return <InstitutionPortfolioStatistics />;
+  if (institution && section === "applications") return shared ? <InstitutionApplications applications={applications} onReview={review} /> : <div className="mx-auto max-w-3xl rounded-[1.25rem] bg-white p-6"><Header title="No shared applications" intro="A farmer's profile and application checklist appear here only when they have chosen to share their summary." institution /><p className="mt-4 text-sm leading-6 text-[#697368]">When sharing is turned off, the institution cannot view the application profile, score or record checklist.</p></div>;
   if (institution && (section === "requests" || section === "referrals")) {
     return <div className="mx-auto max-w-5xl space-y-5"><Header title="Contact a farmer" intro="Send a request to start a conversation. Farm identity and detailed records stay private in the institution workspace." institution /><InstitutionSection section={section} snapshot={snapshot} status={status} totals={totals} requests={requests} request={request} setRequest={setRequest} addRequest={addRequest} /></div>;
   }
@@ -332,6 +335,22 @@ function AdminSection({
       </section>
     </>
   );
+}
+
+function InstitutionApplications({ applications, onReview }: { applications: OpportunityApplicationRecord[]; onReview: (application: OpportunityApplicationRecord, decision: "Reviewed" | "Needs information") => void }) {
+  return <div className="mx-auto max-w-5xl space-y-5">
+    <Header title="Farmer applications" intro="See the farmer’s profile score, key farm figures and how their saved records compare with this programme’s checklist." institution />
+    {applications.length ? <section className="grid gap-3 md:grid-cols-2">{applications.map((application) => {
+      const check = application.requirementCheck;
+      return <article key={application.id} className="rounded-[1.25rem] bg-white p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#799071]">{application.type} · {application.status}</p><h2 className="mt-1 font-serif text-xl font-medium text-[#2f3c30]">{application.farmerName || "Farmer applicant"}</h2><p className="mt-1 text-xs text-[#737d70]">{application.farmName || application.opportunityName}</p></div><div className="rounded-xl bg-[#edf2e8] px-3 py-2 text-center"><strong className="block text-lg leading-5 text-[#35583d]">{application.profileScore ?? "—"}</strong><span className="text-[9px] font-semibold uppercase tracking-wide text-[#71806d]">JARI score</span></div></div>
+        <div className="mt-4 grid grid-cols-3 gap-2">{[["Birds", application.birdCount?.toLocaleString() ?? "—"], ["Houses", application.houseCount ?? "—"], ["Checklist", check ? `${check.readiness}%` : "Not checked"]].map(([label, value]) => <div key={label} className="rounded-lg bg-[#f7f8f4] px-3 py-2"><p className="text-[9px] text-[#84907e]">{label}</p><p className="mt-0.5 text-xs font-semibold text-[#354237]">{value}</p></div>)}</div>
+        <div className="mt-4 rounded-xl bg-[#f7f8f4] p-4"><div className="flex items-center justify-between gap-2"><h3 className="text-xs font-semibold text-[#344236]">Record requirements</h3><span className="text-[10px] text-[#788174]">{check?.met.length ?? 0} present · {check?.missing.length ?? 0} missing</span></div><div className="mt-2 space-y-1.5">{check?.missing.length ? check.missing.map((item) => <p key={item} className="text-xs leading-5 text-[#8b6e37]">Still needed: {item}</p>) : <p className="text-xs leading-5 text-[#55734f]">All listed record checks are present.</p>}</div></div>
+        <p className="mt-3 text-[10px] leading-4 text-[#899184]">The JARI profile score and record check support review; they do not decide eligibility or guarantee approval.</p>
+        {!(["Reviewed", "Needs information"].includes(application.status)) && <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => onReview(application, "Reviewed")} className="min-h-10 rounded-full bg-[#244b35] px-4 text-xs font-semibold text-white">Mark reviewed</button><button type="button" onClick={() => onReview(application, "Needs information")} className="min-h-10 rounded-full bg-[#edf2e8] px-4 text-xs font-semibold text-[#35543b]">Request more information</button></div>}
+      </article>;
+    })}</section> : <Empty message="Farmer applications will appear here after a farmer applies to a demo programme." />}
+  </div>;
 }
 
 function InstitutionSection({ section, snapshot, status, totals, requests, request, setRequest, addRequest }: { section: string; snapshot: ReturnType<typeof getDemoDatabaseSnapshot>; status: string; totals: ReturnType<typeof getDashboardTotals>; requests: InstitutionRequestRecord[]; request: { purpose: string; message: string }; setRequest: (value: { purpose: string; message: string }) => void; addRequest: (event: FormEvent<HTMLFormElement>) => void }) {
