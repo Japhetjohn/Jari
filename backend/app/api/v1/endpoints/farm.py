@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -13,7 +14,7 @@ router = APIRouter(prefix="/farms", tags=["Farms"])
 
 @router.get(
     "/me",
-    response_model=FarmResponse,
+    response_model=Optional[FarmResponse],
     summary="Get current farmer's primary farm",
     description="Retrieve the primary farm associated with the authenticated farmer."
 )
@@ -23,10 +24,7 @@ def get_my_farm(
 ):
     farm = FarmService.get_farm_by_user(db, current_user.id)
     if not farm:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No farm registered for this account."
-        )
+        return None
     return farm
 
 

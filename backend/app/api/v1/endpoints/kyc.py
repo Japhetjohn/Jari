@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -13,7 +14,7 @@ router = APIRouter(prefix="/kyc", tags=["Farmer KYC"])
 
 @router.get(
     "/me",
-    response_model=KycResponse,
+    response_model=Optional[KycResponse],
     summary="Get current farmer KYC application",
     description="Retrieve the KYC review status and details for the authenticated farmer."
 )
@@ -23,10 +24,7 @@ def get_my_kyc(
 ):
     application = KycService.get_by_user(db, current_user.id)
     if not application:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No KYC application on file for this account."
-        )
+        return None
     return application
 
 

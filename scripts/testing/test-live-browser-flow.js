@@ -3,8 +3,9 @@ const assert = require("assert");
 
 const BASE_URL = "https://72.61.97.210";
 const PREFIX = "/api/v1";
+const agent = new https.Agent({ keepAlive: true });
 
-function request({ path, method = "GET", headers = {}, body = null, token = null }) {
+function request({ path, method = "GET", headers = {}, body = null, token = null, retries = 2 }) {
   return new Promise((resolve, reject) => {
     const url = new URL(path.startsWith("http") ? path : `${BASE_URL}${path}`);
     const reqHeaders = {
@@ -21,6 +22,7 @@ function request({ path, method = "GET", headers = {}, body = null, token = null
       {
         method,
         headers: reqHeaders,
+        agent,
         rejectUnauthorized: true, // Strict genuine CA validation
       },
       (res) => {
@@ -37,7 +39,15 @@ function request({ path, method = "GET", headers = {}, body = null, token = null
         });
       }
     );
-    req.on("error", reject);
+    req.on("error", (err) => {
+      if (retries > 0 && (err.code === "ECONNRESET" || err.code === "ETIMEDOUT")) {
+        setTimeout(() => {
+          request({ path, method, headers, body, token, retries: retries - 1 }).then(resolve, reject);
+        }, 300);
+      } else {
+        reject(err);
+      }
+    });
     if (body) req.write(JSON.stringify(body));
     req.end();
   });
@@ -139,15 +149,15 @@ async function run() {
     console.log(`[PASS] Fresh Farmer ${ep.name}: ZERO 400 errors -> returned 200 OK cleanly!`);
   }
 
-  // Verify /farms/me returns 404 for fresh farmer
+  // Verify /farms/me returns 200 with null for fresh farmer (clean empty state, no console 404)
   const farmMeRes = await request({ path: `${PREFIX}/farms/me`, token: freshToken });
-  assert(farmMeRes.status === 404, `Expected 404 for farm before creation, got ${farmMeRes.status}`);
-  console.log("[PASS] Fresh Farmer /farms/me: returns 404 (handled by frontend sync as uncreated farm)");
+  assert(farmMeRes.status === 200 && farmMeRes.data === null, `Expected 200 null for farm before creation, got ${farmMeRes.status}`);
+  console.log("[PASS] Fresh Farmer /farms/me: returns 200 OK with null (ZERO 404 console errors)");
 
-  // Verify /kyc/me returns 404 for fresh farmer
+  // Verify /kyc/me returns 200 with null for fresh farmer (clean empty state, no console 404)
   const kycMeRes = await request({ path: `${PREFIX}/kyc/me`, token: freshToken });
-  assert(kycMeRes.status === 404, `Expected 404 for KYC before creation, got ${kycMeRes.status}`);
-  console.log("[PASS] Fresh Farmer /kyc/me: returns 404 (handled by frontend sync as unsubmitted KYC)");
+  assert(kycMeRes.status === 200 && kycMeRes.data === null, `Expected 200 null for KYC before creation, got ${kycMeRes.status}`);
+  console.log("[PASS] Fresh Farmer /kyc/me: returns 200 OK with null (ZERO 404 console errors)");
 
   console.log("\n=================================================================");
   console.log("   ALL BROWSER WORKFLOW TESTS PASSED CLEANLY (0 ERRORS)!   ");
