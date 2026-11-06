@@ -459,7 +459,7 @@ export async function backendSaveFarmProfile(profile: SavedFarmProfile): Promise
     try {
       res = await farmApi.updateFarm(payload);
     } catch (err: any) {
-      if (err instanceof ApiError && err.status === 404) {
+      if (err instanceof ApiError && (err.status === 404 || err.status === 400)) {
         res = await farmApi.createFarm(payload);
       } else {
         throw err;

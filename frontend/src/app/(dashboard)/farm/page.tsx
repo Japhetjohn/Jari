@@ -14,8 +14,13 @@ export default function FarmPage() {
   const [houseCount, setHouseCount] = useState(0);
 
   useEffect(() => {
-    setFarm(getFarmProfile());
-    setHouseCount(getPoultryHouses().length);
+    const sync = () => {
+      setFarm(getFarmProfile());
+      setHouseCount(getPoultryHouses().length);
+    };
+    sync();
+    window.addEventListener("jari:mock-data-changed", sync);
+    return () => window.removeEventListener("jari:mock-data-changed", sync);
   }, []);
 
   const location = [farm.community, farm.lga, farm.state].filter(Boolean).join(", ");
