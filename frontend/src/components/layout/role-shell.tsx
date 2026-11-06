@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Bell, ChevronDown, Menu, X } from "lucide-react";
+import { ArrowUpRight, Bell, ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { getSavedSession, logoutSimulation, restoreSession, type ActiveSession } from "@/lib/auth";
 import { JariLogo } from "@/components/brand/jari-logo";
 import { DashboardTour } from "@/components/layout/dashboard-tour";
@@ -83,6 +83,8 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
   const notificationPanelRef = useRef<HTMLDivElement>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [expandedNotification, setExpandedNotification] = useState<string | null>(null);
+  const [signOutOpen, setSignOutOpen] = useState(false);
+  const signOutConfirmRef = useRef<HTMLButtonElement>(null);
   const [notifications, setNotifications] = useState<FarmNotification[]>([]);
   const homePath = session ? homeForRole(session.role) : "/dashboard";
 
@@ -186,9 +188,19 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
     };
   }, [mobileNavigationOpen]);
 
+  useEffect(() => {
+    if (!signOutOpen) return;
+    signOutConfirmRef.current?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSignOutOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [signOutOpen]);
+
   if (!mounted || !session || !allowedRoles.includes(session.role)) return null;
 
-  const signOut = () => {
+  const confirmSignOut = () => {
     logoutSimulation();
     router.push("/login");
   };
@@ -206,7 +218,7 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
             <p className="text-xs font-semibold text-[#354537]">Need a hand?</p>
             <p className="mt-1 text-xs leading-5 text-[#72796f]">Contact the JARI team if you need help with your workspace.</p>
             <a href="mailto:info@jari.com" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#496b50] hover:text-[#244a35]">Get support <ArrowUpRight size={13} /></a>
-            <button onClick={signOut} className="mt-3 block text-xs font-semibold text-[#667064] transition-colors hover:text-[#294430]">Sign out</button>
+            <button onClick={() => setSignOutOpen(true)} className="mt-3 block text-xs font-semibold text-[#667064] transition-colors hover:text-[#294430]">Sign out</button>
           </div></div>
         </aside>
 
@@ -237,9 +249,20 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
           <div className="min-h-0 flex-1 overflow-y-auto pb-3">
             <WorkspaceNavigation navigation={navigation} pathname={pathname} homePath={homePath} label={`${workspace} navigation`} onNavigate={closeMobileNavigation} />
           </div>
-          <div className="border-t border-[#e6ebe1] pt-3"><button onClick={signOut} className="flex min-h-11 w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold text-[#59645a] transition-colors hover:bg-[#edf1e8] hover:text-[#2d573a]">Sign out <ArrowUpRight size={15} /></button></div>
+          <div className="border-t border-[#e6ebe1] pt-3"><button onClick={() => setSignOutOpen(true)} className="flex min-h-11 w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold text-[#59645a] transition-colors hover:bg-[#edf1e8] hover:text-[#2d573a]">Sign out <ArrowUpRight size={15} /></button></div>
         </aside>
       </>}
+      {signOutOpen && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#17231a]/45 p-4 backdrop-blur-[2px]" onMouseDown={(event) => { if (event.target === event.currentTarget) setSignOutOpen(false); }}>
+        <section role="alertdialog" aria-modal="true" aria-labelledby="sign-out-title" aria-describedby="sign-out-description" className="w-full max-w-sm rounded-[1.5rem] bg-[#f9faf6] p-6 shadow-[0_24px_80px_-24px_rgba(20,34,23,.45)]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e8eee2] text-[#3f5e42]"><LogOut size={19} /></div>
+          <h2 id="sign-out-title" className="mt-4 font-serif text-xl font-medium tracking-tight text-[#263328]">Sign out of JARI?</h2>
+          <p id="sign-out-description" className="mt-2 text-sm leading-6 text-[#6f796e]">You can sign back in any time with your account details.</p>
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button type="button" onClick={() => setSignOutOpen(false)} className="min-h-11 rounded-full bg-[#e9eee4] px-5 text-sm font-semibold text-[#405742] transition-colors hover:bg-[#dfe8d9]">Stay signed in</button>
+            <button ref={signOutConfirmRef} type="button" onClick={confirmSignOut} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#244b35] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#193d2b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#76916a]"><LogOut size={15} />Sign out</button>
+          </div>
+        </section>
+      </div>}
       <DashboardTour enabled={session.role === "farmer"} userId={session.id} />
     </div>
   );
