@@ -2,20 +2,20 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { addInstitutionRequest, getDashboardTotals, getDemoDatabaseSnapshot, getInstitutionDemoAccess, getInstitutionRequests, getOpportunityApplications, updateOpportunityApplication, type InstitutionRequestRecord, type OpportunityApplicationRecord } from "@/services";
-import { InsuranceRiskProfiles, InstitutionPortfolioStatistics } from "@/components/dashboard/insurance-risk-profiles";
+import { addInstitutionRequest, getDashboardTotals, getDemoDatabaseSnapshot, getInstitutionRequests, getOpportunityApplications, updateOpportunityApplication, type InstitutionRequestRecord, type OpportunityApplicationRecord } from "@/services";
+import { InstitutionPortfolioStatistics } from "@/components/dashboard/insurance-risk-profiles";
 import { adminApi, getStoredToken } from "@/lib/api-client";
+import { notifyToast } from "@/lib/toast";
 
 const card = "rounded-[1.25rem] bg-white p-5";
 const money = (amount: number) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(amount || 0);
 const titles: Record<string, string> = {
   overview: "Workspace overview", farmers: "Farmer directory", farms: "Farm records", assessments: "Farm record review", opportunities: "Opportunity applications", institutions: "Institution partners", reports: "Farm reports", settings: "Workspace settings",
-  "institution-risk-profiles": "Farmer risk profiles", "institution-farms": "Authorized farm summary", "institution-assessments": "Farm record coverage", "institution-reports": "Farm summary report", "institution-documents": "Shared documents", "institution-referrals": "Support referrals", "institution-requests": "Requests to the farm", "institution-settings": "Institution access",
+  "institution-risk-profiles": "Portfolio statistics", "institution-farms": "Farm access", "institution-assessments": "Portfolio statistics", "institution-reports": "Portfolio summary", "institution-documents": "Shared documents", "institution-referrals": "Support referrals", "institution-requests": "Requests to the farm", "institution-settings": "Institution access",
 };
 
 export function WorkspaceHub({ section, institution = false }: { section: string; institution?: boolean }) {
   const [snapshot, setSnapshot] = useState<ReturnType<typeof getDemoDatabaseSnapshot> | null>(null);
-  const [shared, setShared] = useState(false);
   const [applications, setApplications] = useState<OpportunityApplicationRecord[]>([]);
   const [requests, setRequests] = useState<InstitutionRequestRecord[]>([]);
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
@@ -38,7 +38,6 @@ export function WorkspaceHub({ section, institution = false }: { section: string
   useEffect(() => {
     const sync = () => {
       setSnapshot(getDemoDatabaseSnapshot());
-      setShared(getInstitutionDemoAccess().shared);
       setApplications(getOpportunityApplications());
       setRequests(getInstitutionRequests());
     };
@@ -65,7 +64,8 @@ export function WorkspaceHub({ section, institution = false }: { section: string
       setNotice(decision === "Reviewed" ? "Demo review recorded." : "Request for more information recorded.");
       setError("");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not save the review.");
+      const message = reason instanceof Error ? reason.message : "Could not save the review.";
+      setError(message); notifyToast("error", message);
     }
   };
 
@@ -77,24 +77,22 @@ export function WorkspaceHub({ section, institution = false }: { section: string
       setNotice("Request saved in this browser. The farmer can see it after signing in here.");
       setError("");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not save the request.");
+      const message = reason instanceof Error ? reason.message : "Could not save the request.";
+      setError(message); notifyToast("error", message);
     }
   };
 
-  if (institution && section === "risk-profiles") return <InsuranceRiskProfiles />;
-  if (institution && section === "overview") return (
-    <div className="space-y-6">
-      <InstitutionPortfolioStatistics />
-      {shared && <section className="mx-auto max-w-5xl space-y-5"><Header title="Farmer-shared farm summary" intro="This farmer has allowed this demo institution to view a limited summary of their farm records." institution /><InstitutionSection section={section} snapshot={snapshot} status={status} totals={totals} requests={requests} request={request} setRequest={setRequest} addRequest={addRequest} /></section>}
-    </div>
-  );
-  if (institution && !shared) {
+  if (institution && (section === "risk-profiles" || section === "overview")) return <InstitutionPortfolioStatistics />;
+  if (institution && (section === "requests" || section === "referrals")) {
+    return <div className="mx-auto max-w-5xl space-y-5"><Header title="Contact a farmer" intro="Send a request to start a conversation. Farm identity and detailed records stay private in the institution workspace." institution /><InstitutionSection section={section} snapshot={snapshot} status={status} totals={totals} requests={requests} request={request} setRequest={setRequest} addRequest={addRequest} /></div>;
+  }
+  if (institution) {
     return (
       <div className="mx-auto max-w-3xl space-y-5">
-        <Header title="Individual farm details are private" intro="The farmer has turned off institution access to this farm's identifying summary." institution />
+        <Header title="Farm details are protected" intro="The institution workspace shares portfolio statistics. Individual farm profiles and records are available to the farmer and JARI review team." institution />
         <section className={`${card} space-y-3 text-sm leading-6 text-[#657064]`}>
-          <p>Aggregate demo statistics are available from the <Link className="font-semibold text-[#355a3c] underline" href="/institution">institution overview</Link>. The farmer can restore access from <Link className="font-semibold text-[#355a3c] underline" href="/settings">Settings</Link> on this browser.</p>
-          <p>Phone numbers and document contents remain private. This demo choice is stored on this browser and does not send information to an organization or another device.</p>
+          <p>Review portfolio patterns from the <Link className="font-semibold text-[#355a3c] underline" href="/institution">overview statistics</Link>, or <Link className="font-semibold text-[#355a3c] underline" href="/institution/requests">send a request</Link> to ask a farmer for more information.</p>
+          <p>Farm names, exact locations, contact details, documents and individual records are not shown in this institution demo.</p>
         </section>
       </div>
     );
@@ -155,6 +153,22 @@ function AdminSection({
   review: (application: OpportunityApplicationRecord, decision: "Reviewed" | "Needs information") => void;
 }) {
   const farm = snapshot.farmProfile;
+
+  if (section === "assessments") {
+    const location = [farm.community, farm.lga, farm.state].filter(Boolean).join(", ") || "Not recorded";
+    const followUpAreas = [
+      ["Vaccinations", snapshot.vaccinations.length, "Keep the flock's vaccination dates together."],
+      ["Bird health", snapshot.healthIncidents.length + snapshot.treatments.length, "Record illness, care and follow-up."],
+      ["Feed and production", snapshot.feedPurchases.length + snapshot.feedUse.length + snapshot.production.length, "Track supplies and output over time."],
+      ["Sales and spending", snapshot.sales.length + snapshot.expenses.length, "Keep a simple record of money in and out."],
+    ] as const;
+    return <div className="space-y-5">
+      <section className="rounded-[1.25rem] bg-[#e9efe3] p-5 sm:p-6"><p className="text-[10px] font-bold uppercase tracking-[.15em] text-[#698164]">Admin review · Farmer risk profile</p><h2 className="mt-1 font-serif text-2xl font-medium text-[#29352a]">{farm.farmName || "Farm profile"}</h2><p className="mt-1 text-sm text-[#6e7a6b]">{farm.ownerName || "Farmer name not recorded"} · {location}</p><p className="mt-3 text-xs leading-5 text-[#687664]">Use the recorded farm information below to guide review. These records do not produce an automatic credit or insurance decision.</p></section>
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4"><Metric label="Review status" value={status} /><Metric label="Birds in active groups" value={totals.birds.toLocaleString()} /><Metric label="Farm houses" value={String(totals.houses)} /><Metric label="Farm record areas" value={`${followUpAreas.filter(([, count]) => count > 0).length} of ${followUpAreas.length}`} /></section>
+      <section className={`${card} space-y-4`}><div><h3 className="font-semibold text-[#29352a]">Record coverage</h3><p className="mt-1 text-xs leading-5 text-[#788174]">A practical overview of information the farmer has recorded.</p></div><div className="grid gap-2 sm:grid-cols-2">{followUpAreas.map(([label, count, guidance]) => <article key={label} className="rounded-xl bg-[#f5f7f2] p-4"><div className="flex items-center justify-between gap-3"><h4 className="text-sm font-semibold text-[#39483a]">{label}</h4><span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-[#547253]">{count ? `${count} records` : "Not recorded"}</span></div><p className="mt-2 text-xs leading-5 text-[#788174]">{guidance}</p></article>)}</div></section>
+      <section className={`${card} grid gap-4 sm:grid-cols-2`}><div><h3 className="font-semibold text-[#29352a]">Farm and representative</h3><dl className="mt-3 space-y-2 text-sm">{[["Owner", farm.ownerName || "Not recorded"], ["Farm", farm.farmName || "Not recorded"], ["Phone", farm.phone || "Not recorded"], ["Location", location], ["Production", `${farm.operationType} · ${farm.productionSystem}`]].map(([label, value]) => <div key={label} className="flex justify-between gap-3"><dt className="text-[#788174]">{label}</dt><dd className="text-right font-medium text-[#354237]">{value}</dd></div>)}</dl></div><div><h3 className="font-semibold text-[#29352a]">Current farm records</h3><dl className="mt-3 space-y-2 text-sm">{[["Bird groups", snapshot.flocks.length], ["Farm houses", snapshot.poultryHouses.length], ["Vaccinations", snapshot.vaccinations.length], ["Health incidents", snapshot.healthIncidents.length], ["Production entries", snapshot.production.length], ["Sales and expense entries", snapshot.sales.length + snapshot.expenses.length]].map(([label, value]) => <div key={String(label)} className="flex justify-between gap-3"><dt className="text-[#788174]">{label}</dt><dd className="font-semibold text-[#354237]">{value}</dd></div>)}</dl></div></section>
+    </div>;
+  }
 
   if (section === "farmers") {
     return (

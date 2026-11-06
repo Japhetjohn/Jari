@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { loginWithBackend } from "@/lib/auth";
+import { notifyToast } from "@/lib/toast";
 
 const demoAccounts = [
   { label: "Farmer", phone: "08030000000", password: "password123" },
@@ -39,7 +40,8 @@ export default function LoginPage() {
             : "/dashboard";
       router.push(target);
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : "Login failed.");
+      const message = loginError instanceof Error ? loginError.message : "Login failed.";
+      setError(message); notifyToast("error", message);
     } finally {
       setIsSubmitting(false);
     }

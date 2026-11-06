@@ -422,6 +422,7 @@ const commitWithActivity = (writes: Array<[string, unknown]>, activityText: stri
         throw error;
     }
     allWrites.forEach(([key]) => emitDataChanged(key));
+    window.dispatchEvent(new CustomEvent("jari:toast", { detail: { kind: "success", message: activityText } }));
 };
 
 export const getOpportunityApplications = () => readStorage<OpportunityApplicationRecord[]>(STORAGE_KEYS.opportunityApplications, []);
