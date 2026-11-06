@@ -9,8 +9,10 @@ The repository contains a Next.js frontend and a FastAPI backend. The frontend c
 ```text
 frontend/   Next.js 14 application (TypeScript, React, Tailwind CSS)
 backend/    FastAPI application, PostgreSQL models and Alembic migrations
-deploy/     Deployment-related configuration and assets
-scripts/    Project maintenance and deployment scripts
+deploy/                    Deployment-related configuration and assets
+scripts/deployment/        VPS deploy, SSH, and update helpers
+scripts/certificates/      Nginx and Certbot setup/renewal helpers
+scripts/diagnostics/       VPS, DNS, Nginx, and Certbot inspection scripts
 ```
 
 ## Requirements
@@ -182,6 +184,7 @@ Keep production `.env` files, database credentials, token secrets, and uploaded 
 - The institution risk-profile directory contains clearly labeled fictional sample farms for demonstration. It does not expose live farmer data or provide an underwriting decision.
 - Actual farmer records must remain subject to farmer consent. JARI summaries are informational and do not guarantee a loan, insurance cover, claim, or grant.
 - The public login page intentionally does not display internal JARI administrator credentials. Create real backend administrators with the seeding command above and keep their credentials private.
+- Shell scripts under `scripts/` are server operations utilities, not part of the local app startup. They expect Bash and may require SSH/root access. Review them before use: the legacy `update-entrypoint.sh`, `update-env-py.sh`, and `update-migrations.sh` run `DROP SCHEMA public CASCADE`, which deletes database objects, and `seed-admin.sh` contains hard-coded demo credentials.
 
 ## Project documentation
 

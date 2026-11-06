@@ -16,7 +16,7 @@
 ## 2. Reusable Deployment Procedure
 To redeploy backend updates after making code changes:
 ```bash
-./deploy.sh
+./scripts/deployment/deploy.sh
 ```
 This automated script:
 1. Backs up the running PostgreSQL database to `/opt/jari/backups/`.
