@@ -24,6 +24,7 @@ export default function NewBirdsPage() {
     const [form, setForm] = useState(initialForm);
     const [houses, setHouses] = useState<FarmHouseRecord[]>([]);
     const [error, setError] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => { setHouses(getPoultryHouses()); }, []);
 
@@ -31,11 +32,12 @@ export default function NewBirdsPage() {
         setForm((previous) => ({ ...previous, [field]: value }));
     };
 
-    const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setError("");
+        setIsSubmitting(true);
         try {
-            createFlockRecord({
+            await createFlockRecord({
                 name: form.flockName,
                 type: form.poultryType,
                 breed: form.breed,
@@ -51,6 +53,8 @@ export default function NewBirdsPage() {
             router.push("/birds");
         } catch (saveError) {
             setError(saveError instanceof Error ? saveError.message : "We could not save this bird group.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -192,7 +196,7 @@ export default function NewBirdsPage() {
                 <div className="mt-8 flex justify-end">
                     <button
                         type="submit"
-                        className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                        disabled={isSubmitting} className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60"
                     >
                         Save flock
                     </button>

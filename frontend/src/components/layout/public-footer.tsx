@@ -37,13 +37,9 @@ export function PublicFooter({ includeHeroPhotoCredit = false }: PublicFooterPro
           </ul>
         </div>
       </div>
-      <div className="mx-auto mt-10 flex max-w-7xl justify-center pt-5 text-center text-[11px] leading-5 text-[#7a8378]">
-        <div>
-          <p>© {new Date().getFullYear()} JARI. All rights reserved.</p>
-          {includeHeroPhotoCredit && <p className="mx-auto mt-2 max-w-3xl text-[9px] leading-4 text-[#879084]">
-            Poultry photographs: <a className="underline decoration-[#b3bcae] underline-offset-2 hover:text-[#244b35]" href="https://commons.wikimedia.org/wiki/File:An_indoor_space_for_raising_chickens.jpg" target="_blank" rel="noreferrer">Abdulybature</a> (Kano) and <a className="underline decoration-[#b3bcae] underline-offset-2 hover:text-[#244b35]" href="https://commons.wikimedia.org/wiki/File:Poultry_Farm_in_remote_uyo.jpg" target="_blank" rel="noreferrer">Utibe Noah Silas</a> (Uyo), via Wikimedia Commons, <a className="underline decoration-[#b3bcae] underline-offset-2 hover:text-[#244b35]" href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>.
-          </p>}
-        </div>
+      <div className="mx-auto mt-10 flex max-w-7xl flex-col items-center justify-center gap-1 pt-5 text-center text-[11px] leading-5 text-[#7a8378]">
+        <p>&copy; {new Date().getFullYear()} JARI. All rights reserved.</p>
+        {includeHeroPhotoCredit ? <p></p> : null}
       </div>
     </footer>
   );

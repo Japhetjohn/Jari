@@ -49,3 +49,13 @@ uploads/
 *.sqlite3
 *.db
 
+.env.production
+# Deployment scripts and keys
+inspect-*.sh
+seed-admin.sh
+setup-ssh-key.sh
+sync-to-vps.sh
+update-*.sh
+vps-exec.sh
+openapi.json
+deploy/.env*

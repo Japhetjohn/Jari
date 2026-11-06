@@ -13,6 +13,8 @@ export default function PoultryHousesPage() {
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState<FarmHouseRecord | null>(null);
     const [error, setError] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const [isArchiving, setIsArchiving] = useState(false);
     const [birdCounts, setBirdCounts] = useState<Record<string, number>>({});
 
     const refresh = () => {
@@ -25,28 +27,34 @@ export default function PoultryHousesPage() {
     };
     useEffect(refresh, []);
 
-    const saveEdit = (event: FormEvent<HTMLFormElement>) => {
+    const saveEdit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (!selectedHouse || !draft) return;
+        setIsSaving(true);
         try {
-            updatePoultryHouse(selectedHouse.name, draft);
+            await updatePoultryHouse(selectedHouse.name, draft);
             setSelectedHouse(draft);
             setEditing(false);
             setError("");
             refresh();
         } catch (saveError) {
             setError(saveError instanceof Error ? saveError.message : "We could not update this farm house.");
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    const archiveSelected = () => {
+    const archiveSelected = async () => {
         if (!selectedHouse || !window.confirm(`Archive ${selectedHouse.name}?`)) return;
+        setIsArchiving(true);
         try {
-            archivePoultryHouse(selectedHouse.name);
+            await archivePoultryHouse(selectedHouse.name);
             setSelectedHouse(null);
             refresh();
         } catch (archiveError) {
             setError(archiveError instanceof Error ? archiveError.message : "This farm house could not be archived.");
+        } finally {
+            setIsArchiving(false);
         }
     };
 
@@ -76,7 +84,7 @@ export default function PoultryHousesPage() {
                 ))}
             </div>
 
-            {selectedHouse && draft && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[#17231a]/50 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedHouse(null); }}><section role="dialog" aria-modal="true" aria-labelledby="house-detail-title" className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-[1.5rem] bg-[#fbfcf8] p-5 sm:p-7"><div className="flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#82907c]">Farm house details</p><h3 id="house-detail-title" className="mt-1 font-serif text-2xl font-medium text-[#29352a]">{editing ? "Update farm house" : selectedHouse.name}</h3></div><button type="button" onClick={() => { setSelectedHouse(null); setEditing(false); }} aria-label="Close house details" className="flex h-9 w-9 items-center justify-center rounded-full bg-[#edf2e8] text-[#55734f]"><X size={17} /></button></div>{editing ? <form onSubmit={saveEdit} className="mt-5 space-y-3"><label className="label-text block">House name<input required maxLength={80} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label><label className="label-text block">Housing type<input required value={draft.system} onChange={(event) => setDraft({ ...draft, system: event.target.value })} /></label><div className="grid grid-cols-2 gap-3"><label className="label-text block">Capacity in birds<input required min="1" type="number" value={draft.capacity} onChange={(event) => setDraft({ ...draft, capacity: Number(event.target.value) })} /></label><label className="label-text block">Water source<input value={draft.water} onChange={(event) => setDraft({ ...draft, water: event.target.value })} /></label></div><label className="label-text block">Ventilation<input value={draft.ventilation ?? ""} onChange={(event) => setDraft({ ...draft, ventilation: event.target.value })} /></label><label className="label-text flex items-center gap-2">Feed storage<input type="checkbox" checked={draft.feedStorage} onChange={(event) => setDraft({ ...draft, feedStorage: event.target.checked })} /></label><label className="label-text block">Notes<textarea value={draft.notes ?? ""} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} /></label>{error && <p role="alert" className="rounded-xl bg-[#fbefeb] p-3 text-xs text-[#9a493c]">{error}</p>}<div className="flex justify-end gap-2"><button type="button" onClick={() => { setDraft(selectedHouse); setEditing(false); }} className="min-h-10 rounded-full px-4 text-xs font-semibold text-[#657061]">Cancel</button><button className="min-h-10 rounded-full bg-[#244b35] px-4 text-xs font-semibold text-white">Save changes</button></div></form> : <><dl className="mt-5 grid gap-2 sm:grid-cols-2">{[{ label: "Housing type", value: selectedHouse.system }, { label: "Birds in this house", value: `${birdCounts[selectedHouse.name] || 0} of ${selectedHouse.capacity}` }, { label: "Water source", value: selectedHouse.water }, { label: "Feed storage", value: selectedHouse.feedStorage ? "Available" : "Not available" }, { label: "Ventilation", value: selectedHouse.ventilation || "Not recorded" }, { label: "Notes", value: selectedHouse.notes || "No notes added" }].map((item) => <div key={item.label} className="rounded-xl bg-[#f1f4ed] p-4"><dt className="text-[10px] font-semibold uppercase tracking-wide text-[#82907c]">{item.label}</dt><dd className="mt-1 text-sm font-medium text-[#354237]">{item.value}</dd></div>)}</dl><p className="mt-4 flex items-start gap-2 text-xs leading-5 text-[#788174]"><Droplets size={14} className="mt-0.5 shrink-0 text-[#688363]" />Use these details to plan which birds are kept in each house.</p>{error && <p role="alert" className="mt-3 text-xs text-[#9a493c]">{error}</p>}<div className="mt-5 flex gap-2"><button type="button" onClick={() => { setDraft(selectedHouse); setEditing(true); }} className="min-h-10 flex-1 rounded-full bg-[#244b35] text-xs font-semibold text-white">Edit house details</button><button type="button" onClick={archiveSelected} className="min-h-10 rounded-full bg-[#f4eddd] px-4 text-xs font-semibold text-[#8a7141]">Archive</button></div></>}</section></div>}
+            {selectedHouse && draft && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[#17231a]/50 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedHouse(null); }}><section role="dialog" aria-modal="true" aria-labelledby="house-detail-title" className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-[1.5rem] bg-[#fbfcf8] p-5 sm:p-7"><div className="flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#82907c]">Farm house details</p><h3 id="house-detail-title" className="mt-1 font-serif text-2xl font-medium text-[#29352a]">{editing ? "Update farm house" : selectedHouse.name}</h3></div><button type="button" onClick={() => { setSelectedHouse(null); setEditing(false); }} aria-label="Close house details" className="flex h-9 w-9 items-center justify-center rounded-full bg-[#edf2e8] text-[#55734f]"><X size={17} /></button></div>{editing ? <form onSubmit={saveEdit} className="mt-5 space-y-3"><label className="label-text block">House name<input required maxLength={80} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label><label className="label-text block">Housing type<input required value={draft.system} onChange={(event) => setDraft({ ...draft, system: event.target.value })} /></label><div className="grid grid-cols-2 gap-3"><label className="label-text block">Capacity in birds<input required min="1" type="number" value={draft.capacity} onChange={(event) => setDraft({ ...draft, capacity: Number(event.target.value) })} /></label><label className="label-text block">Water source<input value={draft.water} onChange={(event) => setDraft({ ...draft, water: event.target.value })} /></label></div><label className="label-text block">Ventilation<input value={draft.ventilation ?? ""} onChange={(event) => setDraft({ ...draft, ventilation: event.target.value })} /></label><label className="label-text flex items-center gap-2">Feed storage<input type="checkbox" checked={draft.feedStorage} onChange={(event) => setDraft({ ...draft, feedStorage: event.target.checked })} /></label><label className="label-text block">Notes<textarea value={draft.notes ?? ""} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} /></label>{error && <p role="alert" className="rounded-xl bg-[#fbefeb] p-3 text-xs text-[#9a493c]">{error}</p>}<div className="flex justify-end gap-2"><button type="button" onClick={() => { setDraft(selectedHouse); setEditing(false); }} className="min-h-10 rounded-full px-4 text-xs font-semibold text-[#657061]">Cancel</button><button className="min-h-10 rounded-full bg-[#244b35] px-4 text-xs font-semibold text-white">{isSaving ? "Saving..." : "Save changes"}</button></div></form> : <><dl className="mt-5 grid gap-2 sm:grid-cols-2">{[{ label: "Housing type", value: selectedHouse.system }, { label: "Birds in this house", value: `${birdCounts[selectedHouse.name] || 0} of ${selectedHouse.capacity}` }, { label: "Water source", value: selectedHouse.water }, { label: "Feed storage", value: selectedHouse.feedStorage ? "Available" : "Not available" }, { label: "Ventilation", value: selectedHouse.ventilation || "Not recorded" }, { label: "Notes", value: selectedHouse.notes || "No notes added" }].map((item) => <div key={item.label} className="rounded-xl bg-[#f1f4ed] p-4"><dt className="text-[10px] font-semibold uppercase tracking-wide text-[#82907c]">{item.label}</dt><dd className="mt-1 text-sm font-medium text-[#354237]">{item.value}</dd></div>)}</dl><p className="mt-4 flex items-start gap-2 text-xs leading-5 text-[#788174]"><Droplets size={14} className="mt-0.5 shrink-0 text-[#688363]" />Use these details to plan which birds are kept in each house.</p>{error && <p role="alert" className="mt-3 text-xs text-[#9a493c]">{error}</p>}<div className="mt-5 flex gap-2"><button type="button" onClick={() => { setDraft(selectedHouse); setEditing(true); }} className="min-h-10 flex-1 rounded-full bg-[#244b35] text-xs font-semibold text-white">Edit house details</button><button type="button" disabled={isArchiving} onClick={archiveSelected} className="min-h-10 rounded-full bg-[#f4eddd] px-4 text-xs font-semibold text-[#8a7141] disabled:opacity-60">{isArchiving ? "Archiving..." : "Archive"}</button></div></>}</section></div>}
         </div>
     );
 }

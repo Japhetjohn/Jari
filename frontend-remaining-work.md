@@ -1,58 +1,84 @@
-# JARI Frontend — Remaining Work
+# JARI Frontend Implementation Handoff
 
-This file is the handoff checklist for finishing the frontend before backend development begins. Start here, then use `frontend-fix.md` for detailed acceptance criteria. Keep the existing JARI brand, seeded demo accounts and records.
+Updated: 2026-11-05
 
-## Constraints
+This tracker records the current frontend implementation. The JARI demo frontend work below is implemented. The remaining checklist is limited to validation that requires a real browser/device or a deliberate lint configuration decision. Continue from the unchecked items; do not repeat completed implementation.
 
-- Frontend only. Do not add, change or call backend functionality.
-- Keep screens calling `frontend/src/services/index.ts`; implement simulated behavior in `frontend/src/lib/simulated-data.ts` so services can later be replaced by APIs.
-- Preserve and migrate existing demo records when changing browser storage.
-- Do not add dependencies without a project need and approval.
+## Project rules
 
-## Priority 1 — Finish core farm workflows
+- Frontend only. Do not add, change, or call backend functionality.
+- Keep UI workflows behind `frontend/src/services/index.ts`; keep simulated persistence and business rules in `frontend/src/lib/simulated-data.ts` so a future API can replace the services.
+- Preserve and migrate existing browser demo records, seeded accounts, and simulated records.
+- Do not add dependencies without a clear need.
+- Describe scores, eligibility, reviews, insurance, financing, notifications, and outcomes only when supported by saved demo data. Label simulations clearly; never imply an actual insurer, lender, or reviewer has acted.
+- Keep farmer-facing labels plain. Preserve responsive layouts, keyboard support, accessible labels, and reduced-motion behavior.
 
-- [ ] Add partial sale and expense payments, with payment history, balance validation and updated totals.
-- [ ] Implement a combined flock transfer between groups: validate source count and destination capacity, update both populations in one operation and save matching movement history.
-- [ ] Add health-record editing/deletion and treatment records. Confirm mortality is applied once and cannot reduce a flock below zero.
-- [ ] Review farm assets for complete edit, archive/delete and validation behavior.
-- [ ] Review document previews, file-size/storage-quota failures and backup handling. Uploaded content is stored in browser local storage with a 1.5 MB per-file limit.
-- [ ] Validate every field in imported backup sections before writes; handle quota/write failures without leaving partial data. Add a confirmed demo-data reset action.
-- [ ] Turn the JSON report snapshot into a readable farm report for sharing/printing while retaining backup export/import.
-- [ ] Review every create/update action for a useful success/error state, empty state and immediate cross-page refresh.
+## Completed implementation
 
-## Priority 2 — Complete product flows
+### Shared data and workflows
 
-- [ ] Review authentication, registration, session persistence, demo accounts, password recovery and role guards against sections 4 and 5 of `frontend-fix.md`.
-- [ ] Review risk and financial readiness assessments. Derive results only from available records; explain missing inputs and avoid fabricated scores.
-- [ ] Audit farmer dashboard, analytics, notifications and activity for static or unsupported values. Make activity and notification links reflect real simulated actions.
-- [ ] Expand admin and institution workspaces beyond the current shared-data catch-all pages: implement useful verification, opportunity review, reports, partners and request/referral views with role-appropriate links and outcomes.
-- [ ] Add full opportunity eligibility details and the admin-side review of farmer saved applications. Keep provider submission clearly simulated until an API exists.
-- [ ] Check all remaining links, buttons, forms and menu actions, including keyboard use and accessible labels.
+- [x] Added atomic multi-record commits with rollback for browser-storage failures; activity history is written with the change rather than after it.
+- [x] Preserved and normalized legacy sale/expense records; partial payments validate against the remaining balance, append dated history, and update shared totals.
+- [x] Paired flock transfers validate source count and destination house capacity, update both groups, and save matching movement rows together.
+- [x] Flock creation, movement, transfer, sales, mortality, production, vaccination/treatment, feed, and farm-house workflows validate required values and update shared demo data.
+- [x] Mortality is applied once; deleting a loss record restores flock count and records the adjustment.
+- [x] Archived houses are excluded from active dashboard totals.
+- [x] Added storage change events and cross-tab refresh/sign-out handling for open dashboard views.
+- [x] Added dynamic notifications from saved KYC, vaccination, feed, opportunity, and institution-request records; the menu previews four and supports full detail views.
 
-## Priority 3 — Test and polish
+### Farm records and preferences
 
-- [ ] Expand `frontend/scripts/simulated-data.test.cjs` for mortality, paired transfers, backup rollback, document persistence, preferences and role workflows.
-- [ ] Manually exercise sign-in and role navigation, farm registration, flock movements, feed, production, health, finance, KYC review, opportunities and backup import/export across refreshes.
-- [ ] Review phone, tablet and desktop layouts; fix overflow, focus visibility, motion/reduced-motion behavior and menu interactions.
-- [ ] Configure ESLint deliberately, then run `npm run lint`. Currently `next lint` opens its first-time interactive setup because no ESLint configuration exists.
-- [ ] Run `npm run test:workflows`, `npm run build` and `git diff --check` after changes.
+- [x] Asset listing/detail/edit/remove is connected to shared data; names, quantity, value, condition, duplicate names, and removal are handled with feedback.
+- [x] Document upload enforces supported file types and a 1.5 MB limit, persists locally, previews PDF/images, downloads other files, confirms removal, and reports storage errors.
+- [x] Backup import validates supported sections and record fields before writes, rolls back failed storage writes, and supports existing demo data.
+- [x] Settings persist local preferences and farm contact edits, provide backup export/import, and offer a confirmed farm-record reset that retains demo sign-in accounts.
+- [x] Reports provide a farm summary, print action, and separate JSON data-backup download.
 
-## Already implemented — Do not repeat
+### Authentication, risk, and roles
 
-- Versioned `jari-demo:v1:` storage with legacy-record migration, shared change events and centralized simulated services.
-- Persistent workflows for farm profile, houses, flock creation/movements, feed purchases/use/stock, production, health creation, sales/expenses, assets, KYC, activity and preferences.
-- Payment settlement for full outstanding balances; partial payments/history remain above.
-- Data-based sales/expense/production summaries and analytics charts; downloadable JSON report/backup.
-- Opportunity save/checklist stages, local document upload/preview/download/remove, backup import confirmation and basic section validation.
-- Admin/institution catch-all routes for current sidebar paths, plus earlier dashboard navigation, detail/edit, notification, KYC confirmation and tour interactions.
+- [x] Login offers seeded farmer/admin/farm reviewer/institution demo accounts and explains browser-local session behavior.
+- [x] Registration validates inputs and rolls back a failed multi-key save. Password recovery remains explicitly simulated.
+- [x] Risk and assessment screens avoid unsupported risk scores or financing/insurance guarantees and explain when data is illustrative or incomplete.
+- [x] KYC review requests and reviewer decisions are persisted as demo data and labeled as local simulations.
+- [x] Admin and institution entry pages now provide role-specific verification, opportunity review, reports, and institution request workflows.
+- [x] Institution data is opt-in, read-only, limited to the stated farm summary, and gated by the farmer’s saved consent.
+- [x] Institution requests and opportunity applications save status; farmers can see review feedback. Provider submission is identified as simulated, with no external application sent.
+- [x] Registration now offers Farmer and Institution account types; the existing farmer form remains its own flow.
+- [x] Institution onboarding is a multi-step wizard for organisation details, official contacts/location, service categories, conditional service details, representative credentials, verification evidence, and final review.
+- [x] Wizard navigation validates each step, keeps entered data while moving backward, and updates its progress indicator as service categories change.
+- [x] Institution service steps collect the lending, insurance, and grant details listed in `JARI Institution Onboarding and Institutional Dashboard Implementation.md`.
+- [x] Registration collects category-relevant evidence (registration, lender/insurer licence, and grant-authority documents) plus optional representative-authority evidence and organisation logo.
+- [x] Institution submission creates a browser-local institutional account and a `Pending Verification` application; the institution home page displays the saved status and selected services.
+- [x] Added an institution-side Farmer Risk Profiles section with searchable, click-to-open sample poultry profiles, operational/health/financial record coverage, and clear fictional-demo/consent notes.
+- [x] Removed unsupported eligibility/match claims; status reflects saved records only.
 
-## Latest validation
+### Tests and code structure
 
-- `npm run build`: passed; all 42 routes generated. Tailwind reports an ambiguous custom easing-class warning.
-- `npm run test:workflows`: passed, 5 checks (legacy migration, flock population update, feed stock, payment bounds and malformed-backup rejection).
-- `git diff --check`: passed; Git prints line-ending normalization notices.
-- No backend code was changed.
+- [x] Simulated operations are exposed through the service facade for later API substitution.
+- [x] Workflow test coverage includes legacy migration/payments, role login, registration rollback, sales, feed stock, paired transfers, mortality restoration, treatment, documents/quota, assets, preferences, institution consent/requests, reset behavior, and backup validation/rollback.
+- [x] Workflow tests confirm institution profile persistence and rollback of account/session when institution profile storage fails.
+- [x] Retained the JARI poultry brand, existing UI direction, mobile drawer, reduced-motion behavior, and farmer-readable copy.
 
-## Start here
+## Remaining validation
 
-Implement partial payments and atomic flock transfers first. Add tests alongside each workflow, then finish health treatments/editing and backup failure handling. Update this checklist as items are completed; do not mark the frontend complete until the responsive/manual checks above pass.
+- [x] Run the listed automated checks after the institution wizard changes.
+- [ ] In a real browser, manually exercise farmer/admin/reviewer/institution sign-in and navigation; farm profile; houses; flock create/movement/transfer; feed purchase/use; production; health/treatment; sale and partial payment; expense and partial payment; KYC; opportunity save/review; documents; reports; and backup import/export across refreshes.
+- [ ] Visually check phone, tablet, and desktop for overflow, fixed-header/drawer/dialog behavior, keyboard focus, and touch-target sizing. Check reduced-motion and landing-page reveal behavior.
+- [ ] ESLint currently has no project configuration; `npm run lint` starts the interactive first-run setup. Review and add a deliberate configuration before enabling lint; do not accept a default blindly.
+
+## Latest verification
+
+- `npm run test:workflows`: 24 tests passed after adding institution-registration and rollback coverage.
+- `npx tsc --noEmit`: passed after the institution wizard and status card were added.
+- `npm run build`: passed on retry and generated all 42 routes. The first attempt encountered a missing generated Next.js chunk during page-data collection; the retry completed cleanly. The ambiguous custom easing warning was removed.
+- After adding the institution risk-profile directory, TypeScript passed. The latest build attempt compiled but failed page-data collection while a Next.js dev process was again writing to `.next`; rerun a production build only after the active dev server is stopped.
+- `git diff --check`: passed; Git only printed line-ending normalization notices for modified files.
+- Production HTTP smoke check returned 200 for `/`, `/login`, `/dashboard`, `/admin`, `/admin/opportunities`, `/institution`, and `/institution/requests`. A broader sequential sweep stalled the local server and was stopped; it is not counted as a successful full-route smoke test.
+- No browser executable is available in this environment, so visual/responsive end-to-end checks remain outstanding.
+- No backend files or backend behavior were changed.
+
+## Next steps
+
+1. Run the remaining manual browser/device checks when a browser is available; include all three institution service selections, multi-service selection, backwards navigation, required evidence, final review, and pending-status display. Confirm the existing farmer registration still works.
+2. Check phone, tablet, and desktop layouts and keyboard navigation; fix any issues and record the results here.
+3. Decide on a reviewed ESLint configuration, then run lint.

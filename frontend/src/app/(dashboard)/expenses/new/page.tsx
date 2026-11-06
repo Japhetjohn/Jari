@@ -17,6 +17,7 @@ export default function NewExpensePage() {
     const [form, setForm] = useState(initialForm);
     const router = useRouter();
     const [error, setError] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) => {
         setForm((previous) => ({ ...previous, [field]: value }));
@@ -101,7 +102,7 @@ export default function NewExpensePage() {
                 </div>
 
                 <div className="mt-8 flex justify-end">
-                    <button type="submit" className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
+                    <button type="submit" disabled={isSubmitting} className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60">
                         Save expense
                     </button>
                 </div>

@@ -19,10 +19,15 @@ export default function DashboardPage() {
   const [totals, setTotals] = useState(getDashboardTotals());
   const [activity, setActivity] = useState<ActivityRecord[]>([]);
   useEffect(() => {
-    setFarm(getFarmProfile());
-    setApplication(getKycApplication());
-    setTotals(getDashboardTotals());
-    setActivity(getActivityRecords());
+    const sync = () => {
+      setFarm(getFarmProfile());
+      setApplication(getKycApplication());
+      setTotals(getDashboardTotals());
+      setActivity(getActivityRecords());
+    };
+    sync();
+    window.addEventListener("jari:mock-data-changed", sync);
+    return () => window.removeEventListener("jari:mock-data-changed", sync);
   }, []);
   const farmLocation = [farm.community, farm.lga, farm.state].filter(Boolean).join(", ");
   const money = (value: number) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(value);
@@ -49,7 +54,7 @@ export default function DashboardPage() {
         {startCards.map(({ title, detail, href, icon: Icon }) => <Link key={title} href={href} data-tour={href === "/kyc" ? "dashboard-first-action" : undefined} className="group rounded-[1.3rem] bg-white p-4 transition-colors hover:bg-[#f0f3ed] sm:p-5"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#edf2e8] text-[#55734f]"><Icon size={17} /></span><h3 className="mt-4 text-sm font-semibold text-[#354237]">{title}</h3><p className="mt-1 text-xs leading-5 text-[#788174]">{detail}</p><span className="mt-4 inline-flex items-center gap-1 text-[10px] font-semibold text-[#547253]">Open <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span></Link>)}
       </section>
 
-      <section className="flex flex-col gap-4 rounded-[1.35rem] bg-[#e9efe3] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"><div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#55734f]"><Sprout size={17} /></span><div><p className="text-sm font-semibold text-[#344a36]">{application?.status === "approved" ? "Your farm review is complete" : application?.status === "pending" ? "Your farm review request is with JARI" : application?.status === "needs_changes" ? "JARI needs a little more information" : "Your farm risk profile starts with a review"}</p><p className="mt-1 text-xs leading-5 text-[#687664]">{application?.status === "approved" ? "View your farm profile and keep your details up to date." : application?.status === "pending" ? "We’ll update your review status here." : application?.status === "needs_changes" ? (application.reviewNote || "Review your farm details and send the request again.") : "Send your farm details so the JARI team can arrange a review."}</p></div></div><Link href={application?.status === "approved" ? "/assessments" : "/kyc"} className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start text-xs font-semibold text-[#496b50] hover:text-[#244b35] sm:self-auto">{application?.status === "approved" ? "View risk profile" : application?.status === "pending" ? "View request" : "Start farm review"}<ArrowRight size={14} /></Link></section>
+      <section className="flex flex-col gap-4 rounded-[1.35rem] bg-[#e9efe3] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"><div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#55734f]"><Sprout size={17} /></span><div><p className="text-sm font-semibold text-[#344a36]">{application?.status === "approved" ? "Farm details marked verified in demo" : application?.status === "pending" ? "Farm review waiting in this browser" : application?.status === "needs_changes" ? "Admin demo requested more details" : "Your farm risk profile starts with a review"}</p><p className="mt-1 text-xs leading-5 text-[#687664]">{application?.status === "approved" ? "View your farm profile and keep your details up to date." : application?.status === "pending" ? "The admin demo can update the request status here." : application?.status === "needs_changes" ? (application.reviewNote || "Review your farm details and save the request again.") : "Save your farm details for review in this browser demo."}</p></div></div><Link href={application?.status === "approved" ? "/assessments" : "/kyc"} className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start text-xs font-semibold text-[#496b50] hover:text-[#244b35] sm:self-auto">{application?.status === "approved" ? "View risk profile" : application?.status === "pending" ? "View request" : "Start farm review"}<ArrowRight size={14} /></Link></section>
 
       <section className="rounded-[1.35rem] bg-white p-4 sm:p-6"><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#82907c]">Recent changes</p><h3 className="mt-1 font-serif text-xl font-medium text-[#29352a]">Farm activity</h3></div><div className="mt-3 space-y-2">{activity.length ? activity.slice(0, 4).map((item) => <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f4] p-3"><p className="text-xs font-medium text-[#59645a]">{item.text}</p><time className="shrink-0 text-[10px] text-[#899184]">{new Date(item.createdAt).toLocaleDateString()}</time></div>) : <p className="rounded-xl bg-[#f7f8f4] p-4 text-xs text-[#788174]">Changes you make to farm records will show here.</p>}</div></section>
     </div>

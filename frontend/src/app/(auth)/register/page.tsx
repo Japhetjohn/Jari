@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { registerWithSimulation } from "@/lib/auth";
+import { registerWithBackend } from "@/lib/auth";
+import { InstitutionRegistrationWizard } from "../institution-registration-wizard";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -14,13 +15,14 @@ export default function RegisterPage() {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [accountType, setAccountType] = useState<"farmer" | "institution">("farmer");
 
   const handleChange = (field: keyof typeof form, value: string) => {
     setForm((previous) => ({ ...previous, [field]: value }));
     if (error) setError("");
   };
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
@@ -35,7 +37,7 @@ export default function RegisterPage() {
 
     setIsSubmitting(true);
     try {
-      registerWithSimulation(form.fullName, form.phone, form.password);
+      await registerWithBackend(form.fullName, form.phone, form.password);
       router.push("/dashboard");
     } catch (registerError) {
       setError(registerError instanceof Error ? registerError.message : "Unable to create account.");
@@ -49,10 +51,12 @@ export default function RegisterPage() {
       <div className="mb-6">
         <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#547253]">Get started</p>
         <h1 className="mt-3 font-serif text-3xl font-medium tracking-[-.03em] text-[#20291f] sm:text-4xl">Create your JARI account</h1>
-        <p className="mt-2 text-sm leading-6 text-[#697268]">Start with your details. Add farm information as you go.</p>
+        <p className="mt-2 text-sm leading-6 text-[#697268]">{accountType === "farmer" ? "Start with your details. Add farm information as you go." : "Register your organisation and the services it offers."}</p>
       </div>
 
-      <form className="space-y-3.5" onSubmit={onSubmit}>
+      <label className="mb-4 block"><span className="label-text">Account type</span><select className="input-shell" value={accountType} onChange={(event) => { setAccountType(event.target.value as "farmer" | "institution"); setError(""); }}><option value="farmer">Farmer</option><option value="institution">Institution</option></select></label>
+
+      {accountType === "institution" ? <InstitutionRegistrationWizard /> : <form className="space-y-3.5" onSubmit={onSubmit}>
         <div><label htmlFor="fullName" className="label-text">Full name</label><input id="fullName" autoComplete="name" className="input-shell" placeholder="Your full name" value={form.fullName} onChange={(event) => handleChange("fullName", event.target.value)} /></div>
         <div><label htmlFor="register-phone" className="label-text">Phone number</label><input id="register-phone" type="tel" autoComplete="tel" className="input-shell" placeholder="0803 000 0000" value={form.phone} onChange={(event) => handleChange("phone", event.target.value)} /></div>
         <div>
@@ -69,7 +73,7 @@ export default function RegisterPage() {
         {error && <div role="alert" className="rounded-xl bg-[#fbefeb] px-3.5 py-3 text-sm text-[#9a493c]">{error}</div>}
 
         <button type="submit" disabled={isSubmitting} className="mt-1 min-h-12 w-full rounded-xl bg-[#244b35] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#193d2b] disabled:cursor-not-allowed disabled:bg-[#81947f]">{isSubmitting ? "Creating account..." : "Create account"}</button>
-      </form>
+      </form>}
 
       <p className="mt-5 text-center text-sm text-[#657064]">Already have an account? <Link href="/login" className="font-semibold text-[#496b50] hover:text-[#244a35]">Sign in</Link></p>
     </>

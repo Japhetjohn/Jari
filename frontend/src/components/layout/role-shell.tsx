@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Bell, ChevronDown, Menu, X } from "lucide-react";
-import { getSavedSession, logoutSimulation } from "@/lib/auth";
+import { getSavedSession, logoutSimulation, restoreSession, type ActiveSession } from "@/lib/auth";
 import { JariLogo } from "@/components/brand/jari-logo";
 import { DashboardTour } from "@/components/layout/dashboard-tour";
-import { farmNotifications } from "@/lib/notifications";
+import { getFarmNotifications, type FarmNotification } from "@/lib/notifications";
 
 type NavigationItem = { href: string; label: string };
 type NavigationGroup = { label: string; items: NavigationItem[]; collapsible?: boolean };
@@ -74,7 +74,8 @@ function WorkspaceNavigation({
 export function RoleShell({ children, workspace, eyebrow, navigation, allowedRoles }: RoleShellProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [session, setSession] = useState(getSavedSession());
+  const [mounted, setMounted] = useState(false);
+  const [session, setSession] = useState<ActiveSession | null>(null);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [drawerMounted, setDrawerMounted] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -82,9 +83,12 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
   const notificationPanelRef = useRef<HTMLDivElement>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [expandedNotification, setExpandedNotification] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<FarmNotification[]>([]);
   const homePath = session ? homeForRole(session.role) : "/dashboard";
 
   useEffect(() => {
+    let active = true;
+    setMounted(true);
     const currentSession = getSavedSession();
     if (!currentSession) {
       router.replace("/login");
@@ -95,6 +99,26 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
       return;
     }
     setSession(currentSession);
+
+    // Verify session against real backend if token exists
+    restoreSession().then((verified) => {
+      if (!active) return;
+      if (!verified) {
+        router.replace("/login");
+      } else {
+        setSession(verified);
+      }
+    });
+
+    const handleAuthExpired = () => {
+      router.replace("/login");
+    };
+    window.addEventListener("jari:auth-expired", handleAuthExpired);
+
+    return () => {
+      active = false;
+      window.removeEventListener("jari:auth-expired", handleAuthExpired);
+    };
   }, [allowedRoles, router]);
 
   useEffect(() => {
@@ -110,6 +134,24 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
     document.addEventListener("mousedown", closeOutside);
     return () => document.removeEventListener("mousedown", closeOutside);
   }, [notificationsOpen]);
+
+  useEffect(() => {
+    if (session?.role !== "farmer") return;
+    const sync = () => setNotifications(getFarmNotifications());
+    sync(); window.addEventListener("jari:mock-data-changed", sync);
+    return () => window.removeEventListener("jari:mock-data-changed", sync);
+  }, [session?.role]);
+
+  useEffect(() => {
+    const syncOtherTab = (event: StorageEvent) => {
+      if (event.key?.startsWith("jari-demo:v1:") || event.key?.startsWith("jari-simulated-")) {
+        window.dispatchEvent(new CustomEvent("jari:mock-data-changed", { detail: { key: event.key || "*" } }));
+      }
+      if (event.key === "jari-simulated-session" && !event.newValue) router.replace("/login");
+    };
+    window.addEventListener("storage", syncOtherTab);
+    return () => window.removeEventListener("storage", syncOtherTab);
+  }, [router]);
 
   useEffect(() => {
     if (mobileNavigationOpen) {
@@ -144,7 +186,7 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
     };
   }, [mobileNavigationOpen]);
 
-  if (!session || !allowedRoles.includes(session.role)) return null;
+  if (!mounted || !session || !allowedRoles.includes(session.role)) return null;
 
   const signOut = () => {
     logoutSimulation();
@@ -173,7 +215,7 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3 lg:block"><Link href={homePath} aria-label="JARI home" className="lg:hidden"><JariLogo size={23} /></Link><div className="hidden min-w-0 lg:block"><p className="text-[10px] font-bold uppercase tracking-[.15em] text-[#71806f]">{eyebrow}</p><h1 className="mt-0.5 truncate font-serif text-2xl tracking-tight">{workspace}</h1></div></div>
               <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                {session.role === "farmer" && <div ref={notificationPanelRef} className="relative"><button type="button" aria-label="Notifications" aria-expanded={notificationsOpen} aria-controls={notificationsOpen ? "notification-preview" : undefined} onClick={() => setNotificationsOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#e9eee4] text-[#526052] transition-colors hover:bg-[#dfe8d9]"><Bell size={17} strokeWidth={1.7} /><span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#76916a] ring-2 ring-[#e9eee4]" /></button>{notificationsOpen && <div id="notification-preview" className="absolute right-0 top-full z-[60] mt-3 w-[min(360px,calc(100vw-24px))] rounded-[1.25rem] bg-white p-3 shadow-[0_18px_55px_-25px_rgba(25,42,28,.42)]"><div className="flex items-center justify-between px-2 pb-2"><h2 className="text-sm font-semibold text-[#354237]">Notifications</h2><span className="text-[10px] text-[#899184]">Latest 4</span></div><div className="space-y-1">{farmNotifications.slice(0, 4).map((notification) => <div key={notification.id} className="rounded-xl bg-[#f7f8f4]"><button type="button" aria-expanded={expandedNotification === notification.id} onClick={() => setExpandedNotification((id) => id === notification.id ? null : notification.id)} className="w-full rounded-xl p-3 text-left hover:bg-[#eef2e9]"><span className="flex items-start justify-between gap-2"><span className="text-xs font-semibold text-[#354237]">{notification.title}</span><span className="shrink-0 text-[9px] text-[#899184]">{notification.time}</span></span><span className="mt-1 block text-[11px] leading-4 text-[#788174]">{notification.detail}</span>{expandedNotification === notification.id && <span className="mt-2 block border-t border-[#e8ece3] pt-2 text-[11px] leading-5 text-[#59645a]">{notification.fullText}</span>}</button></div>)}</div><Link href="/notifications" onClick={() => setNotificationsOpen(false)} className="mt-2 flex min-h-10 items-center justify-center rounded-full bg-[#244b35] text-xs font-semibold text-white hover:bg-[#193d2b]">View all notifications</Link></div>}</div>}
+                {session.role === "farmer" && <div ref={notificationPanelRef} className="relative"><button type="button" aria-label="Notifications" aria-expanded={notificationsOpen} aria-controls={notificationsOpen ? "notification-preview" : undefined} onClick={() => setNotificationsOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#e9eee4] text-[#526052] transition-colors hover:bg-[#dfe8d9]"><Bell size={17} strokeWidth={1.7} />{notifications.length > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#76916a] ring-2 ring-[#e9eee4]" />}</button>{notificationsOpen && <div id="notification-preview" className="absolute right-0 top-full z-[60] mt-3 w-[min(360px,calc(100vw-24px))] rounded-[1.25rem] bg-white p-3 shadow-[0_18px_55px_-25px_rgba(25,42,28,.42)]"><div className="flex items-center justify-between px-2 pb-2"><h2 className="text-sm font-semibold text-[#354237]">Notifications</h2><span className="text-[10px] text-[#899184]">Latest {Math.min(4, notifications.length)}</span></div><div className="space-y-1">{notifications.slice(0, 4).map((notification) => <div key={notification.id} className="rounded-xl bg-[#f7f8f4]"><button type="button" aria-expanded={expandedNotification === notification.id} onClick={() => setExpandedNotification((id) => id === notification.id ? null : notification.id)} className="w-full rounded-xl p-3 text-left hover:bg-[#eef2e9]"><span className="flex items-start justify-between gap-2"><span className="text-xs font-semibold text-[#354237]">{notification.title}</span><span className="shrink-0 text-[9px] text-[#899184]">{notification.time}</span></span><span className="mt-1 block text-[11px] leading-4 text-[#788174]">{notification.detail}</span>{expandedNotification === notification.id && <span className="mt-2 block border-t border-[#e8ece3] pt-2 text-[11px] leading-5 text-[#59645a]">{notification.fullText}</span>}</button></div>)}</div>{notifications.length === 0 && <p className="px-3 py-4 text-xs text-[#788174]">No farm updates yet.</p>}<Link href="/notifications" onClick={() => setNotificationsOpen(false)} className="mt-2 flex min-h-10 items-center justify-center rounded-full bg-[#244b35] text-xs font-semibold text-white hover:bg-[#193d2b]">View all notifications</Link></div>}</div>}
                 {session.role === "farmer" ? <Link href="/farm" data-tour="farm-profile" aria-label="View your farm profile" title="View farm profile" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#dfe8d9] text-sm font-semibold text-[#37533b] transition-colors hover:bg-[#cdddc4]">{session.fullName.charAt(0).toUpperCase()}</Link> : <span className="hidden h-10 w-10 items-center justify-center rounded-full bg-[#dfe8d9] text-sm font-semibold text-[#37533b] sm:flex" aria-label={session.fullName}>{session.fullName.charAt(0).toUpperCase()}</span>}
                 <button ref={mobileMenuButtonRef} data-tour="workspace-menu" type="button" aria-label={mobileNavigationOpen ? "Close workspace menu" : "Open workspace menu"} aria-expanded={mobileNavigationOpen} aria-controls={mobileNavigationOpen ? "mobile-workspace-navigation" : undefined} onClick={() => setMobileNavigationOpen((open) => !open)} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#244b35] text-white transition-colors hover:bg-[#193d2b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#76916a] lg:hidden">{mobileNavigationOpen ? <X size={19} /> : <Menu size={19} />}</button>
               </div>
@@ -186,7 +228,7 @@ export function RoleShell({ children, workspace, eyebrow, navigation, allowedRol
 
       {drawerMounted && <>
         <button type="button" aria-hidden="true" tabIndex={-1} onClick={closeMobileNavigation} className={`fixed inset-0 z-40 bg-[#17231a]/45 transition-opacity duration-300 lg:hidden ${drawerVisible ? "opacity-100" : "opacity-0"}`} />
-        <aside id="mobile-workspace-navigation" aria-label={`${workspace} menu`} aria-hidden={!mobileNavigationOpen} className={`fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col bg-[#f7f8f3] p-4 transition-transform duration-300 ease-[cubic-bezier(.22,.61,.36,1)] lg:hidden sm:p-6 ${drawerVisible ? "translate-x-0" : "-translate-x-full"}`}>
+        <aside id="mobile-workspace-navigation" aria-label={`${workspace} menu`} aria-hidden={!mobileNavigationOpen} className={`fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col bg-[#f7f8f3] p-4 transition-transform duration-300 ease-out motion-reduce:transition-none lg:hidden sm:p-6 ${drawerVisible ? "translate-x-0" : "-translate-x-full"}`}>
           <div className="flex items-center justify-between gap-3 border-b border-[#e6ebe1] pb-4">
             <Link href={homePath} onClick={closeMobileNavigation} aria-label="JARI home"><JariLogo size={25} /></Link>
             <button type="button" onClick={closeMobileNavigation} aria-label="Close workspace menu" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e9eee4] text-[#405742] transition-colors hover:bg-[#dfe8d9]"><X size={18} /></button>
