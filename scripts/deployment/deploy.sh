@@ -7,6 +7,9 @@ set -e
 # Never disrupts other VPS services or deletes database volumes.
 # ==============================================================================
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
+
 VPS_IP="${VPS_IP:-72.61.97.210}"
 VPS_USER="${VPS_USER:-root}"
 DEPLOY_DIR="/opt/jari"
@@ -18,7 +21,7 @@ echo "=================================================================="
 # 1. Package backend source files
 echo "==> Step 1: Packaging local backend files..."
 TEMP_ARCHIVE=$(mktemp /tmp/jari-backend-XXXXXX.tar.gz)
-tar -czf "$TEMP_ARCHIVE" -C backend alembic app alembic.ini requirements.txt Dockerfile entrypoint.sh docker-compose.prod.yml
+tar -czf "$TEMP_ARCHIVE" -C "${REPO_ROOT}/backend" alembic app alembic.ini requirements.txt Dockerfile entrypoint.sh docker-compose.prod.yml
 
 # 2. Transfer files to VPS
 echo "==> Step 2: Uploading backend files to ${DEPLOY_DIR} on VPS..."

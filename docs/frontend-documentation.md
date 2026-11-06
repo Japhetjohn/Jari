@@ -180,14 +180,12 @@ The repository currently contains:
 
 ```text
 project-root/
-│
+├── README.md
 ├── backend/
-│
+├── docs/
 ├── frontend/
-│
-├── .gitignore
-│
-└── writing-block.md
+├── scripts/
+└── .gitignore
 ```
 
 Keep this separation.
