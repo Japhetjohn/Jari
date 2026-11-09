@@ -4,7 +4,7 @@ const allowedRoles: Array<"institutional_user"> = ["institutional_user"];
 
 const navigation = [
   { label: "Overview", collapsible: false, items: [{ href: "/institution", label: "Overview" }] },
-  { label: "Portfolio", items: [{ href: "/institution/risk-profiles", label: "Portfolio statistics" }] },
+  { label: "Portfolio", items: [{ href: "/institution/risk-profiles", label: "Farmer profiles" }, { href: "/institution/applications", label: "Applications" }] },
   { label: "Collaboration", items: [{ href: "/institution/requests", label: "Contact farmers" }] },
   { label: "Account", items: [{ href: "/institution/settings", label: "Settings" }] },
 ];

@@ -117,7 +117,8 @@ export type FinancialPaymentRecord = { id: string; date: string; amount: number;
 
 export type SalesEntry = { id?: string; date: string; item?: string; product?: string; amount: number | string; amountReceived?: number; payments?: FinancialPaymentRecord[]; quantity?: number; unit?: string; flock?: string; status?: string; outstanding?: number };
 export type ExpenseEntry = { id?: string; date: string; category: string; amount: number | string; amountPaid?: number; payments?: FinancialPaymentRecord[]; outstanding?: number; flock?: string; note?: string };
-export type OpportunityApplicationRecord = { id: string; opportunityId: string; opportunityName: string; type: string; status: "Interested" | "Preparing" | "Submitted" | "Reviewed" | "Needs information"; note: string; createdAt: string };
+export type OpportunityRequirementCheck = { met: string[]; missing: string[]; readiness: number };
+export type OpportunityApplicationRecord = { id: string; opportunityId: string; opportunityName: string; type: string; status: "Interested" | "Preparing" | "Submitted" | "Reviewed" | "Needs information"; note: string; createdAt: string; farmerName?: string; farmName?: string; birdCount?: number; houseCount?: number; profileScore?: number; requirementCheck?: OpportunityRequirementCheck };
 export type InstitutionRequestRecord = { id: string; institutionName: string; purpose: string; message: string; status: "Open" | "Acknowledged" | "Closed"; createdAt: string };
 export type InstitutionCategory = "Lending Institution" | "Insurance Provider" | "Grant Provider";
 export type InstitutionVerificationDocument = { id: string; name: string; type: string; size: number; dataUrl: string; category: string };
@@ -426,17 +427,17 @@ const commitWithActivity = (writes: Array<[string, unknown]>, activityText: stri
 };
 
 export const getOpportunityApplications = () => readStorage<OpportunityApplicationRecord[]>(STORAGE_KEYS.opportunityApplications, []);
-export const applyToOpportunity = (application: Omit<OpportunityApplicationRecord, "id" | "createdAt" | "status">) => {
+export const applyToOpportunity = (application: Omit<OpportunityApplicationRecord, "id" | "createdAt" | "status"> & { status?: OpportunityApplicationRecord["status"] }) => {
     const records = getOpportunityApplications();
     if (records.some((record) => record.opportunityId === application.opportunityId)) throw new Error("You have already saved this opportunity.");
-    const created: OpportunityApplicationRecord = { ...application, id: idFor("application"), status: "Interested", createdAt: new Date().toISOString() };
+    const created: OpportunityApplicationRecord = { ...application, id: idFor("application"), status: application.status || "Interested", createdAt: new Date().toISOString() };
     writeWithActivity(STORAGE_KEYS.opportunityApplications, [...records, created]);
     return created;
 };
-export const updateOpportunityApplication = (id: string, status: OpportunityApplicationRecord["status"], note?: string) => {
+export const updateOpportunityApplication = (id: string, status: OpportunityApplicationRecord["status"], note?: string, details?: Partial<Pick<OpportunityApplicationRecord, "requirementCheck" | "farmerName" | "farmName" | "birdCount" | "houseCount" | "profileScore">>) => {
     const records = getOpportunityApplications();
     if (!records.some((record) => record.id === id)) throw new Error("Application not found.");
-    const next = records.map((record) => record.id === id ? { ...record, status, note: note ?? record.note } : record);
+    const next = records.map((record) => record.id === id ? { ...record, ...details, status, note: note ?? record.note } : record);
     writeWithActivity(STORAGE_KEYS.opportunityApplications, next);
     return next;
 };
